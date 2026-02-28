@@ -3,47 +3,42 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-console.log('[WKLBGH v0.0.1] Aggressive Injector starting...');
+console.log('[WKLBGH v0.0.2] React-Compliant Injector starting...');
 
 const injectApp = () => {
-  if (document.getElementById('wklbgh-container')) return true;
+  if (document.getElementById('wklbgh-container')) return;
 
-  // Search for the level progress widget (2025 standard)
-  const widget = document.querySelector('[data-widget-name="level_progress"]');
-  const dashboard = document.querySelector('.dashboard__content') || 
-                    document.querySelector('.dashboard') || 
-                    document.querySelector('.container');
-  
-  const target = widget || dashboard || document.body;
+  // We are looking for the Level Progress widget, BUT we will inject
+  // as a SIBLING to the main dashboard container to avoid React conflicts.
+  const dashboard = document.querySelector('.dashboard') || 
+                    document.querySelector('.dashboard__content') ||
+                    document.body;
 
-  if (!target) {
-    console.warn('[WKLBGH] No suitable target found in current DOM.');
-    return false;
+  if (!dashboard) {
+    console.log('[WKLBGH] Waiting for dashboard...');
+    return;
   }
 
-  console.log('[WKLBGH] Found target:', target.tagName, target.className || target.getAttribute('data-widget-name'));
+  console.log('[WKLBGH] Injecting sibling to:', dashboard.tagName);
   
   const container = document.createElement('div');
   container.id = 'wklbgh-container';
   
-  // High visibility styles to prove it's there
+  // Mandatory "I am here" styles
   container.style.cssText = `
     display: block !important;
     width: 100% !important;
-    min-height: 200px !important;
-    background: #fff !important;
-    border: 5px solid yellow !important;
-    margin: 20px 0 !important;
-    z-index: 999999 !important;
+    margin: 20px auto !important;
+    max-width: 1100px !important;
+    z-index: 100 !important;
     position: relative !important;
+    background: #fff !important;
+    border: 10px solid blue !important; /* BLUE for this version's testing */
+    min-height: 200px !important;
   `;
 
-  // Standard DOM injection (no shadow DOM for this proof-of-concept fix)
-  if (widget) {
-    widget.after(container);
-  } else {
-    document.body.prepend(container);
-  }
+  // Place it inside the dashboard container but NOT as a child of a React component
+  dashboard.prepend(container);
 
   const root = ReactDOM.createRoot(container);
   root.render(
@@ -52,30 +47,26 @@ const injectApp = () => {
     </React.StrictMode>,
   );
   
-  console.log('[WKLBGH] UI mounted successfully.');
-  return true;
+  console.log('[WKLBGH] Successfully mounted.');
 };
 
-// Initial check and setup listeners
-const setup = () => {
-  if (!injectApp()) {
-    // Retry every 200ms for 10 seconds
-    let count = 0;
-    const interval = setInterval(() => {
-      count++;
-      if (injectApp() || count > 50) clearInterval(interval);
-    }, 200);
-  }
-};
-
+// Turbo events are critical for WaniKani
 window.addEventListener('turbo:load', () => {
   console.log('[WKLBGH] Turbo load.');
-  setup();
+  injectApp();
 });
 
-// Run immediately
+window.addEventListener('turbo:render', () => {
+  console.log('[WKLBGH] Turbo render.');
+  injectApp();
+});
+
+// Periodic check for dynamic loading
+setInterval(injectApp, 1000);
+
+// Initial try
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  setup();
+  injectApp();
 } else {
-  window.addEventListener('DOMContentLoaded', setup);
+  window.addEventListener('DOMContentLoaded', injectApp);
 }
