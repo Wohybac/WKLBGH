@@ -1,22 +1,23 @@
 # Development Diary
 
-## 2026-02-28: Sprint 2 - Core API & Gemini Integration
+## 2026-02-28: Session 1 Wrap-up (Sprints 1-3)
 
-### Goals:
-- [x] Enable WaniKani API Key authentication and persistent storage.
-- [x] Fetch learned Kanji and Vocabulary counts from WaniKani.
-- [x] Connect to Gemini API to generate personalized Japanese lessons.
-- [x] Finalize UI with settings toggle and exercise display.
+### Sprint 1: Scaffolding
+- [x] Initialized Vite + React + TS environment.
+- [x] Connected to GitHub.
 
-### Results:
-- [x] Implemented Settings UI for WaniKani and Gemini API keys.
-- [x] Used `GM_setValue`/`GM_getValue` to securely store keys in the user's browser.
-- [x] Developed `/assignments` scanner to identify learned items (SRS stage > 0).
-- [x] Integrated Gemini API (v1beta) to generate lessons using the student's current progress.
-- [x] Reduced `.user.js` size by externalizing React to a CDN.
-- [x] Fixed injection timing to ensure compatibility with Tampermonkey.
+### Sprint 2: API & Visuals
+- [x] Implemented WaniKani & Gemini API logic.
+- [x] Solved injection issues using "Sibling DOM" strategy.
+- [x] ACHIEVED VISUAL DELIVERY on the dashboard.
+
+### Sprint 3: WKOF & Elegance
+- [x] Integrated **WaniKani Open Framework (WKOF)**.
+- [x] Updated data scanner to use `wkof.ItemData` for high-performance caching.
+- [x] Fixed "Black Background" CSS bug by cleaning up global styles.
+- [x] Established proper versioning (Final: v0.1.1).
 
 ### Retrospective:
-- The `GM_xmlhttpRequest` was essential to bypass CORS for both WaniKani and Gemini APIs.
-- Externalizing React saved significant file size and improved load times.
-- **Improvement:** In future sprints, we should fetch actual Kanji/Vocab strings (via WKOF) rather than just counts to make the Gemini prompts even more accurate.
+- The move to **Bundled React** was necessary for CSP compliance.
+- **WKOF** is now the backbone of the project, ensuring stability and community standard compatibility.
+- **Next Focus:** UI beautification and feeding actual Kanji strings to Gemini.

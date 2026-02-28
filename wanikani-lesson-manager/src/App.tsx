@@ -2,11 +2,18 @@ import { useState, useEffect } from 'react';
 import { GM_getValue, GM_setValue, GM_xmlhttpRequest } from '$';
 import './App.css';
 
+// Declare wkof for TypeScript
+declare global {
+  interface Window {
+    wkof: any;
+  }
+}
+
 function App() {
   const [apiKey, setApiKey] = useState(GM_getValue('wk_api_key', ''));
   const [geminiKey, setGeminiKey] = useState(GM_getValue('gemini_api_key', ''));
   const [showSettings, setShowSettings] = useState(!apiKey);
-  const [status, setStatus] = useState('Idle');
+  const [status, setStatus] = useState('Idle (WKOF Integrated)');
   const [userData, setUserData] = useState<any>(null);
   const [learnedCount, setLearnedCount] = useState({ kanji: 0, vocabulary: 0 });
   const [exercise, setExercise] = useState('');
@@ -42,37 +49,42 @@ function App() {
           setStatus('Invalid WaniKani API Key');
           setShowSettings(true);
         }
-      },
-      onerror: () => {
-        setStatus('Error connecting to WaniKani');
-        setShowSettings(true);
       }
     });
   };
 
-  const scanLearnedItems = () => {
-    if (!apiKey) return;
-    setStatus('Scanning learned items...');
-    GM_xmlhttpRequest({
-      method: 'GET',
-      url: 'https://api.wanikani.com/v2/assignments?subject_types=kanji,vocabulary&started=true',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Wanikani-Revision': '20170710'
-      },
-      onload: (response) => {
-        if (response.status === 200) {
-          const data = JSON.parse(response.responseText);
-          const learned = data.data.filter((a: any) => a.data.srs_stage > 0);
-          const counts = learned.reduce((acc: any, curr: any) => {
-            acc[curr.object] = (acc[curr.object] || 0) + 1;
-            return acc;
-          }, { kanji: 0, vocabulary: 0 });
-          setLearnedCount(counts);
-          setStatus(`Dictionary ready: ${counts.kanji} Kanji, ${counts.vocabulary} Vocab.`);
+  const scanLearnedItems = async () => {
+    if (!window.wkof) {
+      setStatus('WKOF not found. Please install WaniKani Open Framework.');
+      return;
+    }
+
+    setStatus('Scanning via WKOF...');
+    try {
+      // Initialize WKOF ItemData module
+      await window.wkof.include('ItemData');
+      await window.wkof.ready('ItemData');
+
+      // Get items that have been started (learned)
+      const items = await window.wkof.ItemData.get_items({
+        wk_items: {
+          options: { assignments: true },
+          filters: {
+            item_type: ['kan', 'voc'],
+            srs_stage: { value: 1, comparison: '>=' } // SRS Stage 1+ means learned
+          }
         }
-      }
-    });
+      });
+
+      const kanji = items.filter((i: any) => i.object === 'kanji').length;
+      const vocab = items.filter((i: any) => i.object === 'vocabulary').length;
+
+      setLearnedCount({ kanji, vocabulary: vocab });
+      setStatus(`WKOF Scan Complete: ${kanji} Kanji, ${vocab} Vocabulary found.`);
+    } catch (e) {
+      console.error(e);
+      setStatus('WKOF Scan Failed.');
+    }
   };
 
   const generateExercise = () => {
@@ -102,7 +114,7 @@ function App() {
           setExercise(data.candidates[0].content.parts[0].text);
           setStatus('Exercise generated!');
         } else {
-          setStatus('Gemini API Error. Check your key.');
+          setStatus('Gemini API Error.');
         }
       }
     });
@@ -110,54 +122,47 @@ function App() {
 
   return (
     <div className="wklbgh-panel" style={{
-      border: '4px solid #f03', 
+      border: '4px solid #007bff', // BLUE for WKOF version
       padding: '25px', 
-      margin: '10px 0', 
+      margin: '20px auto', 
       backgroundColor: '#fff', 
       color: '#333',
       borderRadius: '12px',
-      boxShadow: '0 0 50px rgba(255,0,51,0.3)', // Glow for search & rescue
-      fontFamily: 'sans-serif',
-      boxSizing: 'border-box',
-      display: 'block',
-      width: '100%',
-      minHeight: '200px',
-      zIndex: '99999'
+      boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+      fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+      maxWidth: '1100px',
+      display: 'block'
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 style={{ margin: 0, fontSize: '22px', color: '#f03', fontWeight: '900' }}>WKLBGH - WaniKani Lesson Based Grammar Helper</h1>
+        <h1 style={{ margin: 0, fontSize: '22px', color: '#007bff', fontWeight: 'bold' }}>WKLBGH - WaniKani Lesson Based Grammar Helper</h1>
         <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px' }}>⚙️</button>
       </div>
 
-      <div style={{ padding: '10px', backgroundColor: '#f03', color: '#fff', fontWeight: 'bold', borderRadius: '4px', marginBottom: '15px', textAlign: 'center' }}>
-        DEBUG: IF YOU CAN SEE THIS, THE SCRIPT IS WORKING!
-      </div>
-
       {showSettings ? (
-        <div style={{ padding: '20px', border: '2px dashed #ccc', borderRadius: '8px', marginBottom: '15px' }}>
+        <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '8px', marginBottom: '15px' }}>
           <h2 style={{ fontSize: '18px', marginTop: 0 }}>API Settings</h2>
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px' }}>WaniKani Key:</label>
-            <input type="password" placeholder="v2 API Key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }} />
+            <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }} />
           </div>
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px' }}>Gemini Key:</label>
-            <input type="password" placeholder="Gemini API Key" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }} />
+            <input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }} />
           </div>
-          <button onClick={saveSettings} style={{ padding: '12px 24px', backgroundColor: '#f03', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Save & Verify</button>
+          <button onClick={saveSettings} style={{ padding: '12px 24px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Save Settings</button>
         </div>
       ) : (
         <div>
-          <div style={{ backgroundColor: '#f7f7f7', padding: '12px', borderRadius: '6px', marginBottom: '20px' }}>
+          <div style={{ backgroundColor: '#f8f9fa', padding: '12px', borderRadius: '6px', marginBottom: '20px', borderLeft: '5px solid #007bff' }}>
              <strong>Status:</strong> {status}
           </div>
           <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
-            <button onClick={scanLearnedItems} style={{ flex: 1, padding: '12px', backgroundColor: '#f03', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Scan Progress</button>
-            <button onClick={generateExercise} disabled={learnedCount.kanji === 0} style={{ flex: 1, padding: '12px', backgroundColor: learnedCount.kanji > 0 ? '#4CAF50' : '#ccc', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Generate Lesson</button>
+            <button onClick={scanLearnedItems} style={{ flex: 1, padding: '12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Scan Progress (WKOF)</button>
+            <button onClick={generateExercise} disabled={learnedCount.kanji === 0} style={{ flex: 1, padding: '12px', backgroundColor: learnedCount.kanji > 0 ? '#28a745' : '#ccc', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Generate Lesson</button>
           </div>
 
           {exercise && (
-            <div style={{ padding: '20px', backgroundColor: '#fff', borderRadius: '6px', whiteSpace: 'pre-wrap', maxHeight: '500px', overflowY: 'auto', fontSize: '16px', border: '2px solid #f03', lineHeight: '1.6' }}>
+            <div style={{ padding: '20px', backgroundColor: '#fff', borderRadius: '6px', whiteSpace: 'pre-wrap', maxHeight: '500px', overflowY: 'auto', fontSize: '16px', border: '1px solid #ddd', lineHeight: '1.6' }}>
               {exercise}
             </div>
           )}
