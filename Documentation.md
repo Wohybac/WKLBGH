@@ -9,16 +9,16 @@
 - **Build Tool:** Vite + `vite-plugin-monkey`
 - **APIs:** WaniKani API v2, Google Gemini API (v1beta)
 - **Storage:** Greasemonkey / Tampermonkey `GM_setValue` and `GM_getValue`
-- **Injection Mode:** Shadow DOM (Open) for total style isolation from the host site.
+- **Injection Mode:** Standard DOM (Shadow DOM removed in v0.0.1 for visibility troubleshooting). 
 
 ## 3. System Architecture
 
-### 3.1 Injection & Entry Point (2025 Widget Update)
-The script targets the WaniKani dashboard widget system. It specifically looks for the Level Progress widget using the attribute selector `[data-widget-name="level_progress"]`.
+### 3.1 Injection & Entry Point (v0.0.1 Update)
+The script targets the WaniKani dashboard widget system. It specifically looks for the Level Progress widget using `[data-widget-name="level_progress"]`.
 - **File:** `src/main.tsx`
-- **Logic:** Uses a `MutationObserver` and listens for the `turbo:load` event. The latter is critical as WaniKani uses Turbo (Hotwire) for single-page navigation.
-- **Placement:** The panel is injected immediately **after** the Level Progress widget container.
-- **Logging:** Emits `[WKLBGH]` prefixed console logs for state transitions.
+- **Logic:** Uses a `MutationObserver` and `turbo:load` event listener. 
+- **Placement:** The panel is injected immediately **after** the Level Progress widget container as a standard `div` element (`#wklbgh-container`).
+- **Aggressive Visibility:** The container uses `!important` CSS rules (yellow border, fixed min-height) to ensure it is rendered and visible regardless of host site styles.
 
 ### 3.2 State & Data Management
 The application state is managed within the root `App.tsx` component using React `useState`. 
