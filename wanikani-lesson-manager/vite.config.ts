@@ -5,7 +5,9 @@ import monkey, { cdn } from 'vite-plugin-monkey';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      jsxRuntime: 'classic',
+    }),
     monkey({
       entry: 'src/main.tsx',
       userscript: {
@@ -15,7 +17,7 @@ export default defineConfig({
         match: ['https://www.wanikani.com/*'],
         description: 'WKLBGH - WaniKani Lesson Based Grammar Helper: Manage your lessons with Gemini AI assistance.',
         'run-at': 'document-end',
-        grant: ['GM_setValue', 'GM_getValue', 'GM_xmlhttpRequest'],
+        grant: ['GM_setValue', 'GM_getValue', 'GM_xmlhttpRequest', 'GM_addStyle'],
       },
       build: {
         externalGlobals: {
@@ -25,6 +27,12 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: {
+      'react/jsx-runtime': 'react',
+      'react-dom/client': 'react-dom',
+    }
+  },
   build: {
     minify: false,
     cssMinify: false,

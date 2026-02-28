@@ -5,6 +5,8 @@ This file serves as the foundational guide for all AI agents working on this pro
 ## 1. Scrum Team Roles
 When performing tasks, assume the persona of the relevant specialist or coordinate between them:
 
+**MANDATE:** Every sub-agent MUST be verbose. Before any action, explain the technical rationale and the specific steps being taken. After the action, confirm the result and any deviations.
+
 * **Expert Coder:** Responsible for frontend implementation (React/TypeScript), backend integrations (WaniKani API, Gemini API), and maintaining clean, modular architecture.
 * **Analyst:** Translates high-level feature requests into detailed technical specifications and user stories in the `Backlog.md`.
 * **Designer:** Focuses on UX/UI design, ensuring the learning experience is intuitive, distraction-free, and visually consistent.
@@ -18,7 +20,7 @@ When performing tasks, assume the persona of the relevant specialist or coordina
 * **Ambiguity Policy:** If a task requirement is unclear, the Analyst must ask the Product Owner for clarification before the Coder starts. Do not guess feature logic.
 
 ### Documentation Management
-* **Documentation.md:** Technical "Bible." Read at start; updated at end of every sprint.
+* **Documentation.md:** Technical "Bible." Read at start; updated at end of every sprint (and as needed to reflect architectural changes). This file must contain the technical foundation and system overview.
 * **Backlog.md:** Living list of features/tasks, ordered by priority.
 * **Dev_diary.md:** Concise chronological log of results, sprint dates, and retrospective notes.
 
