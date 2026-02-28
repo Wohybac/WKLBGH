@@ -116,16 +116,21 @@ function App() {
       backgroundColor: '#fff', 
       color: '#333',
       borderRadius: '12px',
-      boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+      boxShadow: '0 0 50px rgba(255,0,51,0.3)', // Glow for search & rescue
       fontFamily: 'sans-serif',
       boxSizing: 'border-box',
       display: 'block',
       width: '100%',
-      minHeight: '100px'
+      minHeight: '200px',
+      zIndex: '99999'
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ margin: 0, fontSize: '22px', color: '#f03', fontWeight: '900' }}>WKLBGH - WaniKani Lesson Based Grammar Helper</h1>
         <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px' }}>⚙️</button>
+      </div>
+
+      <div style={{ padding: '10px', backgroundColor: '#f03', color: '#fff', fontWeight: 'bold', borderRadius: '4px', marginBottom: '15px', textAlign: 'center' }}>
+        DEBUG: IF YOU CAN SEE THIS, THE SCRIPT IS WORKING!
       </div>
 
       {showSettings ? (
