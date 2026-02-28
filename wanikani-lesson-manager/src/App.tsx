@@ -110,37 +110,49 @@ function App() {
 
   return (
     <div className="wklbgh-panel" style={{
-      border: '2px solid #f03', 
-      padding: '20px', 
-      margin: '20px', 
+      border: '4px solid #f03', 
+      padding: '25px', 
+      margin: '10px 0', 
       backgroundColor: '#fff', 
       color: '#333',
-      borderRadius: '8px',
-      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-      fontFamily: 'sans-serif'
+      borderRadius: '12px',
+      boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+      fontFamily: 'sans-serif',
+      boxSizing: 'border-box',
+      display: 'block',
+      width: '100%',
+      minHeight: '100px'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-        <h1 style={{ margin: 0, fontSize: '20px', color: '#f03' }}>WKLBGH - WaniKani Lesson Based Grammar Helper</h1>
-        <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>⚙️</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h1 style={{ margin: 0, fontSize: '22px', color: '#f03', fontWeight: '900' }}>WKLBGH - WaniKani Lesson Based Grammar Helper</h1>
+        <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px' }}>⚙️</button>
       </div>
 
       {showSettings ? (
-        <div style={{ padding: '15px', border: '1px solid #eee', borderRadius: '4px', marginBottom: '15px' }}>
-          <h2 style={{ fontSize: '16px', marginTop: 0 }}>Settings</h2>
-          <input type="password" placeholder="WaniKani API Key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} style={{ width: '100%', padding: '8px', marginBottom: '10px' }} />
-          <input type="password" placeholder="Gemini API Key" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} style={{ width: '100%', padding: '8px', marginBottom: '15px' }} />
-          <button onClick={saveSettings} style={{ padding: '8px 16px', backgroundColor: '#f03', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Save Settings</button>
+        <div style={{ padding: '20px', border: '2px dashed #ccc', borderRadius: '8px', marginBottom: '15px' }}>
+          <h2 style={{ fontSize: '18px', marginTop: 0 }}>API Settings</h2>
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px' }}>WaniKani Key:</label>
+            <input type="password" placeholder="v2 API Key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }} />
+          </div>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px' }}>Gemini Key:</label>
+            <input type="password" placeholder="Gemini API Key" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }} />
+          </div>
+          <button onClick={saveSettings} style={{ padding: '12px 24px', backgroundColor: '#f03', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Save & Verify</button>
         </div>
       ) : (
         <div>
-          <p style={{ margin: '0 0 15px 0' }}><strong>Status:</strong> {status}</p>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-            <button onClick={scanLearnedItems} style={{ padding: '10px 20px', backgroundColor: '#f03', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Scan Progress</button>
-            <button onClick={generateExercise} disabled={learnedCount.kanji === 0} style={{ padding: '10px 20px', backgroundColor: learnedCount.kanji > 0 ? '#4CAF50' : '#ccc', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Generate Lesson</button>
+          <div style={{ backgroundColor: '#f7f7f7', padding: '12px', borderRadius: '6px', marginBottom: '20px' }}>
+             <strong>Status:</strong> {status}
+          </div>
+          <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
+            <button onClick={scanLearnedItems} style={{ flex: 1, padding: '12px', backgroundColor: '#f03', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Scan Progress</button>
+            <button onClick={generateExercise} disabled={learnedCount.kanji === 0} style={{ flex: 1, padding: '12px', backgroundColor: learnedCount.kanji > 0 ? '#4CAF50' : '#ccc', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Generate Lesson</button>
           </div>
 
           {exercise && (
-            <div style={{ padding: '15px', backgroundColor: '#f9f9f9', borderRadius: '4px', whiteSpace: 'pre-wrap', maxHeight: '400px', overflowY: 'auto', fontSize: '14px', border: '1px solid #ddd' }}>
+            <div style={{ padding: '20px', backgroundColor: '#fff', borderRadius: '6px', whiteSpace: 'pre-wrap', maxHeight: '500px', overflowY: 'auto', fontSize: '16px', border: '2px solid #f03', lineHeight: '1.6' }}>
               {exercise}
             </div>
           )}

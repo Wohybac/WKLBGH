@@ -3,29 +3,31 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-console.log('[WKLBGH] Script starting...');
+console.log('[WKLBGH] Widget-based injector starting...');
 
 const injectApp = () => {
   // 1. Prevent multiple injections
   if (document.getElementById('wklbgh-container')) {
+    console.log('[WKLBGH] Already present.');
     return;
   }
 
-  // 2. Identify target for specific placement (under level progress)
-  // WaniKani dashboard uses .level-progress-dashboard as a common container
-  const targetSelector = '.level-progress-dashboard';
+  // 2. 2025 Widget Selector: Target the Level Progress widget
+  const targetSelector = '[data-widget-name="level_progress"]';
   const target = document.querySelector(targetSelector);
 
   if (!target) {
-    console.log('[WKLBGH] Target .level-progress-dashboard not found, waiting...');
+    console.log('[WKLBGH] Level Progress widget not found yet.');
     return false;
   }
 
-  console.log('[WKLBGH] Target found. Injecting panel...');
+  console.log('[WKLBGH] Found Level Progress widget. Injecting...');
   const container = document.createElement('div');
   container.id = 'wklbgh-container';
+  container.style.width = '100%';
+  container.style.marginTop = '20px'; // Ensure spacing below the widget
   
-  // Inject specifically AFTER the level progress component
+  // Inject AFTER the widget as requested
   target.after(container);
 
   const shadow = container.attachShadow({ mode: 'open' });
@@ -37,21 +39,35 @@ const injectApp = () => {
       <App />
     </React.StrictMode>,
   );
-  console.log('[WKLBGH] UI mounted successfully.');
+  console.log('[WKLBGH] Mounted successfully below Level Progress.');
   return true;
 };
 
-// Use MutationObserver to detect the level-progress-dashboard even if it loads late
-const observer = new MutationObserver((mutations, obs) => {
+// Use MutationObserver for dynamic widget loading
+const observer = new MutationObserver(() => {
   if (injectApp()) {
-    obs.disconnect(); // Stop watching once successfully injected
+    // We don't disconnect immediately because WaniKani's Turbo 
+    // might swap elements out. We keep it running but 
+    // injectApp() will prevent duplicates.
   }
 });
 
-// Initial try
-if (!injectApp()) {
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
+// Initial try and setup observers
+const init = () => {
+  if (!injectApp()) {
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+};
+
+// Listen for Turbo load events (WaniKani standard)
+window.addEventListener('turbo:load', () => {
+  console.log('[WKLBGH] Turbo load detected.');
+  init();
+});
+
+// Fallback for initial load
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  init();
+} else {
+  window.addEventListener('DOMContentLoaded', init);
 }

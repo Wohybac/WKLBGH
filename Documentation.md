@@ -13,11 +13,12 @@
 
 ## 3. System Architecture
 
-### 3.1 Injection & Entry Point
-The script targets only the WaniKani dashboard (`/`, `/dashboard`, `/home`). It uses a `MutationObserver` to wait for the `.level-progress-dashboard` component.
+### 3.1 Injection & Entry Point (2025 Widget Update)
+The script targets the WaniKani dashboard widget system. It specifically looks for the Level Progress widget using the attribute selector `[data-widget-name="level_progress"]`.
 - **File:** `src/main.tsx`
-- **Logic:** Once detected, it injects the `#wklbgh-container` immediately **after** the level progress component.
-- **Logging:** Emits `[WKLBGH]` prefixed console logs for injection tracking.
+- **Logic:** Uses a `MutationObserver` and listens for the `turbo:load` event. The latter is critical as WaniKani uses Turbo (Hotwire) for single-page navigation.
+- **Placement:** The panel is injected immediately **after** the Level Progress widget container.
+- **Logging:** Emits `[WKLBGH]` prefixed console logs for state transitions.
 
 ### 3.2 State & Data Management
 The application state is managed within the root `App.tsx` component using React `useState`. 
