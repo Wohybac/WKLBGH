@@ -1,21 +1,22 @@
 # Development Diary
 
-## 2026-02-28: Sprint 1 - Project Scaffolding & Hello World
+## 2026-02-28: Sprint 2 - Core API & Gemini Integration
 
 ### Goals:
-- [x] Initial GitHub repository connection.
-- [x] Project initialization with Vite + React + TypeScript and `vite-plugin-monkey`.
-- [x] Injecting a basic "Hello World" UI into WaniKani.
+- [x] Enable WaniKani API Key authentication and persistent storage.
+- [x] Fetch learned Kanji and Vocabulary counts from WaniKani.
+- [x] Connect to Gemini API to generate personalized Japanese lessons.
+- [x] Finalize UI with settings toggle and exercise display.
 
 ### Results:
-- [x] Connected local Git to GitHub (`Wohybac/WKLBGH`).
-- [x] Project initialized in `wanikani-lesson-manager` with Vite, React, and TypeScript.
-- [x] Configured `vite-plugin-monkey` for `match: ['https://www.wanikani.com/*']`.
-- [x] Implemented Shadow DOM in `main.tsx` for style isolation.
-- [x] Created "Hello World" UI in `App.tsx` with the full project name: "WKLBGH - WaniKani Lesson Based Grammar Helper".
-- [x] Successfully built the userscript into `dist/`.
+- [x] Implemented Settings UI for WaniKani and Gemini API keys.
+- [x] Used `GM_setValue`/`GM_getValue` to securely store keys in the user's browser.
+- [x] Developed `/assignments` scanner to identify learned items (SRS stage > 0).
+- [x] Integrated Gemini API (v1beta) to generate lessons using the student's current progress.
+- [x] Reduced `.user.js` size by externalizing React to a CDN.
+- [x] Fixed injection timing to ensure compatibility with Tampermonkey.
 
-### Retrospective (Planned):
-- The initialization was smooth using `create-monkey`. 
-- The decision to use Shadow DOM for style isolation is a solid foundation.
-- Need to ensure future components use styles that work well inside the Shadow DOM (e.g., inlining CSS or using CSS-in-JS).
+### Retrospective:
+- The `GM_xmlhttpRequest` was essential to bypass CORS for both WaniKani and Gemini APIs.
+- Externalizing React saved significant file size and improved load times.
+- **Improvement:** In future sprints, we should fetch actual Kanji/Vocab strings (via WKOF) rather than just counts to make the Gemini prompts even more accurate.
