@@ -3,42 +3,39 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-console.log('[WKLBGH v0.0.2] React-Compliant Injector starting...');
+// 1. Declare wkof for TypeScript (provided by the @require in vite.config.ts)
+declare global {
+  interface Window {
+    wkof: any;
+  }
+}
+
+console.log('[WKLBGH v0.1.0] WKOF-Integrated Injector starting...');
 
 const injectApp = () => {
-  if (document.getElementById('wklbgh-container')) return;
-
-  // We are looking for the Level Progress widget, BUT we will inject
-  // as a SIBLING to the main dashboard container to avoid React conflicts.
-  const dashboard = document.querySelector('.dashboard') || 
-                    document.querySelector('.dashboard__content') ||
-                    document.body;
-
-  if (!dashboard) {
-    console.log('[WKLBGH] Waiting for dashboard...');
+  if (document.getElementById('wklbgh-container')) {
+    console.log('[WKLBGH] Already present.');
     return;
   }
 
-  console.log('[WKLBGH] Injecting sibling to:', dashboard.tagName);
+  // Look for a stable 2025 WaniKani dashboard widget
+  const dashboard = document.querySelector('[data-widget-name="level_progress"]') || 
+                    document.querySelector('.dashboard__content') || 
+                    document.querySelector('.dashboard') || 
+                    document.body;
+
+  if (!dashboard) {
+    console.warn('[WKLBGH] Waiting for WaniKani dashboard elements...');
+    return;
+  }
+
+  console.log('[WKLBGH] Injecting panel after:', dashboard.tagName);
   
   const container = document.createElement('div');
   container.id = 'wklbgh-container';
   
-  // Mandatory "I am here" styles
-  container.style.cssText = `
-    display: block !important;
-    width: 100% !important;
-    margin: 20px auto !important;
-    max-width: 1100px !important;
-    z-index: 100 !important;
-    position: relative !important;
-    background: #fff !important;
-    border: 10px solid blue !important; /* BLUE for this version's testing */
-    min-height: 200px !important;
-  `;
-
-  // Place it inside the dashboard container but NOT as a child of a React component
-  dashboard.prepend(container);
+  // Clean, sibling injection point (post-dashboard)
+  dashboard.after(container);
 
   const root = ReactDOM.createRoot(container);
   root.render(
@@ -47,26 +44,33 @@ const injectApp = () => {
     </React.StrictMode>,
   );
   
-  console.log('[WKLBGH] Successfully mounted.');
+  console.log('[WKLBGH] UI mounted successfully.');
 };
 
-// Turbo events are critical for WaniKani
-window.addEventListener('turbo:load', () => {
-  console.log('[WKLBGH] Turbo load.');
-  injectApp();
-});
-
-window.addEventListener('turbo:render', () => {
-  console.log('[WKLBGH] Turbo render.');
-  injectApp();
-});
-
-// Periodic check for dynamic loading
-setInterval(injectApp, 1000);
-
-// Initial try
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
+// 2. Initialize WKOF and handle page transitions
+if (!window.wkof) {
+  // Fallback for when WKOF is missing
+  console.error('[WKLBGH] WaniKani Open Framework is missing. Proceeding with standard DOM events.');
+  window.addEventListener('turbo:load', injectApp);
   injectApp();
 } else {
-  window.addEventListener('DOMContentLoaded', injectApp);
+  // Proper WKOF initialization
+  window.wkof.include('ItemData, Menu');
+  window.wkof.ready('ItemData, Menu').then(() => {
+    console.log('[WKLBGH] WKOF Ready.');
+    
+    // Add WKLBGH to the WaniKani Scripts Menu (Elegant!)
+    window.wkof.Menu.insert_script_link({
+        name: 'wklbgh',
+        submenu: 'Settings',
+        title: 'WKLBGH Lessons',
+        on_click: () => { alert('WKLBGH is active on the dashboard!'); }
+    });
+
+    // Use WKOF's robust pageload hook for SPA navigation
+    window.wkof.on_pageload(['/', '/dashboard', '/home'], injectApp);
+    
+    // Initial call
+    injectApp();
+  });
 }
