@@ -8,30 +8,29 @@ console.log('[WKLBGH] Script starting...');
 const injectApp = () => {
   // 1. Prevent multiple injections
   if (document.getElementById('wklbgh-container')) {
-    console.log('[WKLBGH] Already injected.');
     return;
   }
 
-  // 2. Ensure body is available
-  if (!document.body) {
-    console.log('[WKLBGH] Body not ready, retrying in 100ms...');
-    setTimeout(injectApp, 100);
-    return;
+  // 2. Identify target for specific placement (under level progress)
+  // WaniKani dashboard uses .level-progress-dashboard as a common container
+  const targetSelector = '.level-progress-dashboard';
+  const target = document.querySelector(targetSelector);
+
+  if (!target) {
+    console.log('[WKLBGH] Target .level-progress-dashboard not found, waiting...');
+    return false;
   }
 
-  console.log('[WKLBGH] Injecting panel into document body...');
+  console.log('[WKLBGH] Target found. Injecting panel...');
   const container = document.createElement('div');
   container.id = 'wklbgh-container';
   
-  // Prepend to body to ensure it's at the very top of the page
-  document.body.prepend(container);
+  // Inject specifically AFTER the level progress component
+  target.after(container);
 
   const shadow = container.attachShadow({ mode: 'open' });
   const rootDiv = document.createElement('div');
   shadow.appendChild(rootDiv);
-
-  // Note: Styles are being handled by vite-plugin-monkey's automatic injection
-  // which works even with Shadow DOM when using GM_addStyle (configured in grant).
 
   ReactDOM.createRoot(rootDiv).render(
     <React.StrictMode>
@@ -39,11 +38,20 @@ const injectApp = () => {
     </React.StrictMode>,
   );
   console.log('[WKLBGH] UI mounted successfully.');
+  return true;
 };
 
-// Start injection process
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  injectApp();
-} else {
-  window.addEventListener('DOMContentLoaded', injectApp);
+// Use MutationObserver to detect the level-progress-dashboard even if it loads late
+const observer = new MutationObserver((mutations, obs) => {
+  if (injectApp()) {
+    obs.disconnect(); // Stop watching once successfully injected
+  }
+});
+
+// Initial try
+if (!injectApp()) {
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 }

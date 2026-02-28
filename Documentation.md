@@ -14,9 +14,9 @@
 ## 3. System Architecture
 
 ### 3.1 Injection & Entry Point
-The script is injected at `document-end`. It targets `document.body.prepend()` to ensure it appears at the very top of any WaniKani page.
+The script targets only the WaniKani dashboard (`/`, `/dashboard`, `/home`). It uses a `MutationObserver` to wait for the `.level-progress-dashboard` component.
 - **File:** `src/main.tsx`
-- **Logic:** Includes a "Retry" mechanism if `document.body` is not ready. It mounts a React root inside a Shadow DOM container (`#wklbgh-container`).
+- **Logic:** Once detected, it injects the `#wklbgh-container` immediately **after** the level progress component.
 - **Logging:** Emits `[WKLBGH]` prefixed console logs for injection tracking.
 
 ### 3.2 State & Data Management
