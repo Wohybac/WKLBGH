@@ -9,16 +9,15 @@
 - **Build Tool:** Vite + `vite-plugin-monkey`
 - **APIs:** WaniKani API v2, Google Gemini API (v1beta)
 - **Storage:** Greasemonkey / Tampermonkey `GM_setValue` and `GM_getValue`
-- **Injection Mode:** Standard DOM (Shadow DOM removed in v0.0.1 for visibility troubleshooting). 
+- **Injection Mode:** Sibling DOM (Shadow DOM removed in v0.0.1; Sibling strategy implemented in v0.0.2 for React-compatibility).
 
 ## 3. System Architecture
 
-### 3.1 Injection & Entry Point (v0.0.1 Update)
-The script targets the WaniKani dashboard widget system. It specifically looks for the Level Progress widget using `[data-widget-name="level_progress"]`.
+### 3.1 Injection & Entry Point (v0.0.2 "Sibling" Update)
+To prevent WaniKani's internal React engine from unmounting our UI, the script injects the `#wklbgh-container` as a **sibling** to the `.dashboard` or `.dashboard__content` containers.
 - **File:** `src/main.tsx`
-- **Logic:** Uses a `MutationObserver` and `turbo:load` event listener. 
-- **Placement:** The panel is injected immediately **after** the Level Progress widget container as a standard `div` element (`#wklbgh-container`).
-- **Aggressive Visibility:** The container uses `!important` CSS rules (yellow border, fixed min-height) to ensure it is rendered and visible regardless of host site styles.
+- **Logic:** Listens for `turbo:load` and `turbo:render` events. Uses a 1-second `setInterval` heartbeat as a secondary safety to ensure the panel persists during dynamic WaniKani state changes.
+- **Bundling:** React 19 is bundled within the script (v0.0.2+) to bypass WaniKani's Content Security Policy (CSP) which may block external CDN `@require` calls.
 
 ### 3.2 State & Data Management
 The application state is managed within the root `App.tsx` component using React `useState`. 
