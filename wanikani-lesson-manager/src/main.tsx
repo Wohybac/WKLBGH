@@ -3,58 +3,50 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-console.log('[WKLBGH] 2025 Robust Injector starting...');
+console.log('[WKLBGH v0.0.1] Aggressive Injector starting...');
 
 const injectApp = () => {
   if (document.getElementById('wklbgh-container')) return true;
 
-  // 1. Try to find the Level Progress widget (2025 standard)
-  const widgetSelector = '[data-widget-name="level_progress"]';
-  let target = document.querySelector(widgetSelector);
-
-  // 2. Fallback to common dashboard containers if widget isn't found
-  if (!target) {
-    target = document.querySelector('.dashboard__content') || 
-             document.querySelector('.dashboard') || 
-             document.body;
-  }
+  // Search for the level progress widget (2025 standard)
+  const widget = document.querySelector('[data-widget-name="level_progress"]');
+  const dashboard = document.querySelector('.dashboard__content') || 
+                    document.querySelector('.dashboard') || 
+                    document.querySelector('.container');
+  
+  const target = widget || dashboard || document.body;
 
   if (!target) {
-    console.log('[WKLBGH] No suitable injection target found.');
+    console.warn('[WKLBGH] No suitable target found in current DOM.');
     return false;
   }
 
-  console.log('[WKLBGH] Target found:', target.tagName, target.className);
+  console.log('[WKLBGH] Found target:', target.tagName, target.className || target.getAttribute('data-widget-name'));
   
   const container = document.createElement('div');
   container.id = 'wklbgh-container';
   
-  // High visibility styles for the container itself
-  container.style.display = 'block';
-  container.style.width = '100%';
-  container.style.minHeight = '50px';
-  container.style.zIndex = '9999';
-  container.style.position = 'relative';
+  // High visibility styles to prove it's there
+  container.style.cssText = `
+    display: block !important;
+    width: 100% !important;
+    min-height: 200px !important;
+    background: #fff !important;
+    border: 5px solid yellow !important;
+    margin: 20px 0 !important;
+    z-index: 999999 !important;
+    position: relative !important;
+  `;
 
-  // If we are at the body level, let's make it more obvious
-  if (target === document.body) {
-    container.style.position = 'fixed';
-    container.style.bottom = '20px';
-    container.style.right = '20px';
-    container.style.width = '400px';
-    container.style.boxShadow = '0 0 20px rgba(255,0,51,0.5)';
-    console.log('[WKLBGH] Falling back to fixed position injection.');
+  // Standard DOM injection (no shadow DOM for this proof-of-concept fix)
+  if (widget) {
+    widget.after(container);
+  } else {
+    document.body.prepend(container);
   }
 
-  target.after(container);
-
-  const shadow = container.attachShadow({ mode: 'open' });
-  const rootDiv = document.createElement('div');
-  rootDiv.style.display = 'block';
-  rootDiv.style.width = '100%';
-  shadow.appendChild(rootDiv);
-
-  ReactDOM.createRoot(rootDiv).render(
+  const root = ReactDOM.createRoot(container);
+  root.render(
     <React.StrictMode>
       <App />
     </React.StrictMode>,
@@ -64,21 +56,26 @@ const injectApp = () => {
   return true;
 };
 
-// Handle Turbo loads
+// Initial check and setup listeners
+const setup = () => {
+  if (!injectApp()) {
+    // Retry every 200ms for 10 seconds
+    let count = 0;
+    const interval = setInterval(() => {
+      count++;
+      if (injectApp() || count > 50) clearInterval(interval);
+    }, 200);
+  }
+};
+
 window.addEventListener('turbo:load', () => {
   console.log('[WKLBGH] Turbo load.');
-  injectApp();
+  setup();
 });
 
-// Regular intervals for 5 seconds to catch delayed widgets
-let attempts = 0;
-const interval = setInterval(() => {
-  attempts++;
-  if (injectApp() || attempts > 50) {
-    clearInterval(interval);
-  }
-}, 100);
-
-// Mutation Observer as secondary backup
-const observer = new MutationObserver(() => injectApp());
-observer.observe(document.documentElement, { childList: true, subtree: true });
+// Run immediately
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  setup();
+} else {
+  window.addEventListener('DOMContentLoaded', setup);
+}

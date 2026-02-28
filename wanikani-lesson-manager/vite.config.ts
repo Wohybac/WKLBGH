@@ -14,16 +14,16 @@ export default defineConfig({
         name: 'WKLBGH',
         icon: 'https://www.wanikani.com/favicon.ico',
         namespace: 'npm/vite-plugin-monkey',
-        // Target only the dashboard/homepage
+        version: '0.0.1',
+        // Broaden the match to be absolutely sure
         match: [
-          'https://www.wanikani.com/',
-          'https://www.wanikani.com/dashboard*',
+          'https://www.wanikani.com/*',
+          'https://www.wanikani.com/dashboard',
           'https://www.wanikani.com/home'
         ],
         description: 'WKLBGH - WaniKani Lesson Based Grammar Helper: Manage your lessons with Gemini AI assistance.',
         'run-at': 'document-end',
         grant: ['GM_setValue', 'GM_getValue', 'GM_xmlhttpRequest', 'GM_addStyle'],
-        // Added WKOF as a requirement for upcoming data integration
         require: [
           'https://cdn.jsdelivr.net/npm/react@19.2.4/umd/react.production.min.js',
           'https://cdn.jsdelivr.net/npm/react-dom@19.2.4/umd/react-dom.production.min.js'
