@@ -11,7 +11,7 @@ declare global {
   }
 }
 
-console.log('[WKLBGH v0.2.0] WKOF-Integrated Injector starting...');
+console.log('[WKLBGH v0.2.1] WKOF-Integrated Injector starting...');
 
 // Function to get WKOF from the most likely context
 const getWkof = () => {
