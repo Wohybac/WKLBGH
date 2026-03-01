@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GM_getValue, GM_setValue, GM_xmlhttpRequest } from '$';
+import { GM_getValue, GM_setValue, GM_xmlhttpRequest, unsafeWindow } from '$';
 import './App.css';
 
 // Declare wkof for TypeScript
@@ -86,15 +86,16 @@ function App() {
   };
 
   const scanLearnedItems = async () => {
-    if (!window.wkof) {
+    const wkof = (unsafeWindow as any).wkof || (window as any).wkof;
+    if (!wkof) {
       setStatus('WKOF not found. Please install WaniKani Open Framework.');
       return;
     }
 
     setStatus('Scanning via WKOF...');
     try {
-      await window.wkof.include('ItemData');
-      await window.wkof.ready('ItemData');
+      await wkof.include('ItemData');
+      await wkof.ready('ItemData');
 
       if (focusSettings.length === 0) {
         setLearnedCount({ kanji: 0, vocabulary: 0 });
@@ -109,7 +110,7 @@ function App() {
       };
 
       // Get all items initially, then filter manually for complex logic
-      let items = await window.wkof.ItemData.get_items({
+      let items = await wkof.ItemData.get_items({
         wk_items: {
           options: { assignments: true },
           filters: filterOptions

@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { unsafeWindow } from '$';
 
 // 1. Declare wkof for TypeScript (provided by the @require in vite.config.ts)
 declare global {
@@ -11,6 +12,11 @@ declare global {
 }
 
 console.log('[WKLBGH v0.2.0] WKOF-Integrated Injector starting...');
+
+// Function to get WKOF from the most likely context
+const getWkof = () => {
+    return (unsafeWindow as any).wkof || window.wkof;
+};
 
 const injectApp = () => {
   if (document.getElementById('wklbgh-container')) {
@@ -48,19 +54,25 @@ const injectApp = () => {
 };
 
 // 2. Initialize WKOF and handle page transitions
-if (!window.wkof) {
+const wkof = getWkof();
+
+if (!wkof) {
   // Fallback for when WKOF is missing
   console.error('[WKLBGH] WaniKani Open Framework is missing. Proceeding with standard DOM events.');
   window.addEventListener('turbo:load', injectApp);
-  injectApp();
+  
+  // Initial check in case it's already there
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      injectApp();
+  }
 } else {
   // Proper WKOF initialization
-  window.wkof.include('ItemData, Menu');
-  window.wkof.ready('ItemData, Menu').then(() => {
+  wkof.include('ItemData, Menu');
+  wkof.ready('ItemData, Menu').then(() => {
     console.log('[WKLBGH] WKOF Ready.');
     
     // Add WKLBGH to the WaniKani Scripts Menu (Elegant!)
-    window.wkof.Menu.insert_script_link({
+    wkof.Menu.insert_script_link({
         name: 'wklbgh',
         submenu: 'Settings',
         title: 'WKLBGH Lessons',
@@ -68,7 +80,7 @@ if (!window.wkof) {
     });
 
     // Use WKOF's robust pageload hook for SPA navigation
-    window.wkof.on_pageload(['/', '/dashboard', '/home'], injectApp);
+    wkof.on_pageload(['/', '/dashboard', '/home'], injectApp);
     
     // Initial call
     injectApp();

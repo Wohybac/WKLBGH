@@ -17,8 +17,8 @@ export default defineConfig({
           'https://www.wanikani.com/*',
         ],
         description: 'WKLBGH - WaniKani Lesson Based Grammar Helper: Manage your lessons with Gemini AI assistance.',
-        'run-at': 'document-end',
-        grant: ['GM_setValue', 'GM_getValue', 'GM_xmlhttpRequest', 'GM_addStyle'],
+        'run-at': 'document-start',
+        grant: ['GM_setValue', 'GM_getValue', 'GM_xmlhttpRequest', 'GM_addStyle', 'unsafeWindow'],
         require: [
           'https://greasyfork.org/scripts/38581-wanikani-open-framework/code/Wanikani%20Open%20Framework.user.js'
         ],
