@@ -12,7 +12,7 @@ export default defineConfig({
         name: 'WKLBGH',
         icon: 'https://www.wanikani.com/favicon.ico',
         namespace: 'npm/vite-plugin-monkey',
-        version: '0.1.1', // Final Sprint update
+        version: '0.2.0', // Sprint 4 update
         match: [
           'https://www.wanikani.com/*',
         ],
