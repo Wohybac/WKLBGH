@@ -10,7 +10,7 @@ declare global {
   }
 }
 
-console.log('[WKLBGH v0.1.0] WKOF-Integrated Injector starting...');
+console.log('[WKLBGH v0.2.0] WKOF-Integrated Injector starting...');
 
 const injectApp = () => {
   if (document.getElementById('wklbgh-container')) {

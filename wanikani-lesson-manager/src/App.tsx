@@ -42,6 +42,8 @@ function App() {
       if (!newSettings.includes('all')) {
         const confirmAll = window.confirm('Selecting "All" can be resource intensive and may take longer to generate. Proceed?');
         if (confirmAll) newSettings = ['all'];
+      } else {
+        newSettings = [];
       }
     } else {
       newSettings = newSettings.filter(s => s !== 'all');
@@ -50,7 +52,6 @@ function App() {
       } else {
         newSettings.push(id);
       }
-      if (newSettings.length === 0) newSettings = ['all'];
     }
     setFocusSettings(newSettings);
     GM_setValue('wklbgh_focus_settings', newSettings);
@@ -94,6 +95,13 @@ function App() {
     try {
       await window.wkof.include('ItemData');
       await window.wkof.ready('ItemData');
+
+      if (focusSettings.length === 0) {
+        setLearnedCount({ kanji: 0, vocabulary: 0 });
+        setLearnedItems([]);
+        setStatus('Ready (Please select a focus area in settings)');
+        return;
+      }
 
       const filterOptions: any = {
         item_type: ['kan', 'voc'],
@@ -244,6 +252,9 @@ function App() {
 
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: 'bold' }}>Focus Area:</label>
+            {focusSettings.length === 0 && (
+               <div style={{ color: '#dc3545', fontSize: '12px', marginBottom: '10px', fontWeight: 'bold' }}>⚠️ Please select at least one focus area to scan items.</div>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}>
               <FocusButton id="all" label="All" />
               <FocusButton id="recent" label="Most Recent" />
@@ -271,8 +282,28 @@ function App() {
           </div>
           <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
             <button onClick={scanLearnedItems} style={{ flex: 1, padding: '12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Scan Progress (WKOF)</button>
-            <button onClick={generateExercise} disabled={learnedCount.kanji === 0} style={{ flex: 1, padding: '12px', backgroundColor: learnedCount.kanji > 0 ? '#28a745' : '#ccc', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Generate Lesson</button>
+            <button 
+                onClick={generateExercise} 
+                disabled={learnedCount.kanji === 0 || focusSettings.length === 0} 
+                style={{ 
+                    flex: 1, 
+                    padding: '12px', 
+                    backgroundColor: (learnedCount.kanji > 0 && focusSettings.length > 0) ? '#28a745' : '#ccc', 
+                    color: '#fff', 
+                    border: 'none', 
+                    borderRadius: '6px', 
+                    cursor: (learnedCount.kanji > 0 && focusSettings.length > 0) ? 'pointer' : 'not-allowed', 
+                    fontWeight: 'bold' 
+                }}
+            >
+                Generate Lesson
+            </button>
           </div>
+          {focusSettings.length === 0 && (
+             <div style={{ textAlign: 'center', color: '#dc3545', marginBottom: '20px', fontSize: '14px', fontWeight: 'bold' }}>
+                Please go to settings (⚙️) and select a Focus Area first!
+             </div>
+          )}
 
           {exercise && (
             <div style={{ padding: '20px', backgroundColor: '#fff', borderRadius: '6px', whiteSpace: 'pre-wrap', maxHeight: '500px', overflowY: 'auto', fontSize: '16px', border: '1px solid #ddd', lineHeight: '1.6' }}>
