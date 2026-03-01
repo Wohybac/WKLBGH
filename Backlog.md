@@ -13,11 +13,11 @@
 - [x] **WK-010: Advanced Focus Selection** - Implement the Focus Matrix in settings (v0.2.0).
 - [x] **WK-016: Bugfix - WKOF Detection** - Fixed detection issue using `unsafeWindow` and `document-start` (v0.2.1).
 - [x] **WK-018: Bugfix - WKOF Scan Hang** - Fixed by removing `@require` conflict and using `review_statistics` (v0.2.8).
+- [x] **WK-017: Bugfix - UI Layout & Scoping** - Implemented Virtual Widget system with MutationObserver and user-selectable placement (v0.2.13).
 
 ## To-Do Tasks (Ordered by Priority)
 
 ### High Priority
-- [ ] **WK-017: Bugfix - UI Layout & Scoping** - Fix header stretching and ensure plugin doesn't appear on inappropriate screens (e.g., Settings).
 - [ ] **WK-014: Prompt Engineering & Tinkering** - Refine and iterate on Gemini prompts using the focused data.
 
 ### Medium Priority

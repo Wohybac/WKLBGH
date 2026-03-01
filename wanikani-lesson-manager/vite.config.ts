@@ -12,7 +12,7 @@ export default defineConfig({
         name: 'WKLBGH',
         icon: 'https://www.wanikani.com/favicon.ico',
         namespace: 'npm/vite-plugin-monkey',
-        version: '0.2.8', // Review Statistics integration for Leeches update
+        version: '0.2.13', // Restore informative status messages update
         match: [
           'https://www.wanikani.com/*',
         ],

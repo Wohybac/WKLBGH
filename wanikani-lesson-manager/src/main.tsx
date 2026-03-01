@@ -2,87 +2,98 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { unsafeWindow } from '$';
+import { unsafeWindow, GM_getValue } from '$';
 
-// 1. Declare wkof for TypeScript (provided by the @require in vite.config.ts)
 declare global {
   interface Window {
     wkof: any;
   }
 }
 
-console.log('[WKLBGH v0.2.8] WKOF-Integrated Injector starting...');
+console.log('[WKLBGH v0.2.13] Virtual Widget Injector starting...');
 
-// Function to get WKOF from the most likely context
-const getWkof = () => {
-    return (unsafeWindow as any).wkof || window.wkof;
-};
+const getWkof = () => (unsafeWindow as any).wkof || window.wkof;
 
 const injectApp = () => {
-  if (document.getElementById('wklbgh-container')) {
-    console.log('[WKLBGH] Already present.');
-    return;
-  }
+  const path = window.location.pathname;
+  const isDashboard = path === '/' || path === '/dashboard' || path === '/home';
+  if (!isDashboard) return;
 
-  // Look for a stable 2025 WaniKani dashboard widget
-  const dashboard = document.querySelector('[data-widget-name="level_progress"]') || 
-                    document.querySelector('.dashboard__content') || 
-                    document.querySelector('.dashboard') || 
-                    document.body;
+  if (document.getElementById('wklbgh-container')) return;
 
-  if (!dashboard) {
-    console.warn('[WKLBGH] Waiting for WaniKani dashboard elements...');
-    return;
-  }
+  const content = document.querySelector('.dashboard__content');
+  if (!content) return;
 
-  console.log('[WKLBGH] Injecting panel after:', dashboard.tagName);
-  
+  // Placement Preference
+  const placement = GM_getValue('wklbgh_placement', 'below_level_progress');
+  const levelProgress = document.querySelector('.level-progress-widget') || 
+                        document.querySelector('[data-dashboard-widget-url-value*="level-progress"]');
+
   const container = document.createElement('div');
   container.id = 'wklbgh-container';
-  
-  // Clean, sibling injection point (post-dashboard)
-  dashboard.after(container);
+  container.className = 'dashboard__row wklbgh-virtual-widget-row';
+  container.innerHTML = '<div class="dashboard__widget dashboard__widget--full"><div id="wklbgh-mount"></div></div>';
+  const mountPoint = container.querySelector('#wklbgh-mount') as HTMLElement;
 
-  const root = ReactDOM.createRoot(container);
+  if (placement === 'below_level_progress' && levelProgress) {
+    const row = levelProgress.closest('.dashboard__row');
+    if (row) {
+      row.after(container);
+      console.log('[WKLBGH] Injected after Level Progress.');
+    } else {
+      content.prepend(container);
+    }
+  } else if (placement === 'bottom') {
+    content.appendChild(container);
+    console.log('[WKLBGH] Injected at bottom.');
+  } else {
+    content.prepend(container);
+    console.log('[WKLBGH] Injected at top.');
+  }
+
+  const root = ReactDOM.createRoot(mountPoint);
   root.render(
     <React.StrictMode>
       <App />
-    </React.StrictMode>,
+    </React.StrictMode>
   );
-  
-  console.log('[WKLBGH] UI mounted successfully.');
 };
 
-// 2. Initialize WKOF and handle page transitions
-const wkof = getWkof();
+// 2. Robust Observer setup
+const startObserver = () => {
+    const targetNode = document.documentElement || document.body || document;
+    if (!targetNode) {
+        // Extreme fallback
+        setTimeout(startObserver, 100);
+        return;
+    }
 
+    const observer = new MutationObserver(() => {
+      if (document.querySelector('.dashboard__content') && !document.getElementById('wklbgh-container')) {
+        injectApp();
+      }
+    });
+
+    observer.observe(targetNode, { childList: true, subtree: true });
+    console.log('[WKLBGH] MutationObserver active.');
+};
+
+// 3. Initialize
+const wkof = getWkof();
 if (!wkof) {
-  // Fallback for when WKOF is missing
-  console.error('[WKLBGH] WaniKani Open Framework is missing. Proceeding with standard DOM events.');
   window.addEventListener('turbo:load', injectApp);
-  
-  // Initial check in case it's already there
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      injectApp();
+  // Start observer immediately or wait for DOMContentLoaded
+  if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startObserver);
+  } else {
+      startObserver();
   }
 } else {
-  // Proper WKOF initialization
   wkof.include('ItemData, Menu');
   wkof.ready('ItemData, Menu').then(() => {
     console.log('[WKLBGH] WKOF Ready.');
-    
-    // Add WKLBGH to the WaniKani Scripts Menu (Elegant!)
-    wkof.Menu.insert_script_link({
-        name: 'wklbgh',
-        submenu: 'Settings',
-        title: 'WKLBGH Lessons',
-        on_click: () => { alert('WKLBGH is active on the dashboard!'); }
-    });
-
-    // Use WKOF's robust pageload hook for SPA navigation
     wkof.on_pageload(['/', '/dashboard', '/home'], injectApp);
-    
-    // Initial call
+    startObserver(); // Still use observer as fallback for WKOF pageload
     injectApp();
   });
 }

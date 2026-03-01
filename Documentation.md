@@ -1,49 +1,42 @@
 # Technical Documentation - WKLBGH
 
 ## 1. Project Overview
-**WKLBGH (WaniKani Lesson Based Grammar Helper)** is a Greasyfork userscript designed to provide personalized Japanese grammar exercises. It uses the student's WaniKani progress to identify "learned" items and employs Google's Gemini AI to generate contextually relevant grammar practice.
+**WKLBGH (WaniKani Lesson Based Grammar Helper)** is a Greasyfork userscript designed to provide personalized Japanese grammar exercises. It uses the student's WaniKani progress (Kanji and Vocabulary) to feed the Gemini 1.5 Flash API, ensuring that all generated exercises use only familiar vocabulary.
 
 ## 2. Technical Stack
-- **Framework:** React 19 (Loaded via CDN)
-- **Language:** TypeScript (Strict Mode)
-- **Build Tool:** Vite + `vite-plugin-monkey`
-- **APIs:** WaniKani API v2, Google Gemini API (v1beta)
-- **Storage:** Greasemonkey / Tampermonkey `GM_setValue` and `GM_getValue`
-- **Injection Mode:** Sibling DOM (Shadow DOM removed in v0.0.1; Sibling strategy implemented in v0.0.2 for React-compatibility).
+- **Framework:** React 19 (Bundled for CSP compliance).
+- **Build Tool:** Vite + `vite-plugin-monkey`.
+- **Data Source:** WaniKani API v2 via **WaniKani Open Framework (WKOF)**.
+- **AI Engine:** Google Gemini 1.5 Flash.
+- **Styling:** Vanilla CSS + Native WaniKani classes.
 
-## 3. System Architecture
+## 3. Architecture & Features
 
-### 3.1 Injection & Entry Point (v0.0.2 "Sibling" Update)
-To prevent WaniKani's internal React engine from unmounting our UI, the script injects the `#wklbgh-container` as a **sibling** to the `.dashboard` or `.dashboard__content` containers.
-- **File:** `src/main.tsx`
-- **Logic:** Listens for `turbo:load` and `turbo:render` events. Uses a 1-second `setInterval` heartbeat as a secondary safety to ensure the panel persists during dynamic WaniKani state changes.
-- **Bundling:** React 19 is bundled within the script (v0.0.2+) to bypass WaniKani's Content Security Policy (CSP) which may block external CDN `@require` calls.
+### 3.1 Injection Strategy (Virtual Widget)
+To ensure compatibility with WaniKani's modular dashboard (introduced Oct 2025), WKLBGH uses a **MutationObserver** to detect the presence of the dashboard container (`.dashboard__content`).
+- **Native Alignment:** The widget is wrapped in standard WaniKani classes (`.dashboard__row`, `.dashboard__widget`) to maintain layout integrity.
+- **Dynamic Placement:** Users can select their preferred injection point via settings:
+    - **Top:** Injected at the start of the dashboard.
+    - **Below Level Progress:** Injected after the level progress widget (Primary target).
+    - **Bottom:** Injected at the end of the dashboard content.
 
 ### 3.2 State & Data Management
 The application state is managed within the root `App.tsx` component using React `useState`. 
 - **API Keys:** Stored in the browser's userscript storage (`GM_setValue`).
 - **Focus Settings:** Persisted array of selected filters (e.g., `['1-10', 'recent']`).
-- **User Progress:** Fetched from WaniKani's `/assignments` endpoint via WKOF.
-- **Learned Items:** Defined as assignments where `srs_stage > 0` and `started = true`.
+- **Placement Settings:** Persisted preference for where the widget appears.
+- **Learned Items:** Fetched via WKOF, filtered by SRS stage (1-9) and user selection.
 
-### 3.3 Data Filtering Logic (Sprint 4 Update)
-The `scanLearnedItems` function performs multi-stage filtering after receiving data from WKOF:
-1.  **Level Spreads:** Filters items by user-selected ranges (e.g., 1-10, 11-20). Ranges are only selectable if the user has reached at least the minimum level of that range.
+### 3.3 Data Filtering Logic
+1.  **Level Spreads:** Filters items by user-selected ranges (e.g., 1-10, 11-20). 
 2.  **Most Recent:** Dynamically filters items from levels `[user_level, user_level-1, user_level-2]`.
-3.  **Leeches:** Identifies items with a heuristic score based on `meaning_incorrect + reading_incorrect > 5`.
-4.  **Mutual Exclusion:** The "All" option clears all other filters, and selecting any specific filter removes "All".
+3.  **Leeches:** Identifies items using the formula: `incorrect_answers / (srs_stage ^ 1.5)`. Includes burned items with high historical failure rates.
 
-### 3.4 External Integrations
-...
-- **Gemini API:** Uses the `generateContent` endpoint. Prompts are constructed using the user's level and a random sample of up to 50 items from the filtered "Learned Items" set to optimize prompt size and relevance.
-- **CORS Handling:** All API communication uses `GM_xmlhttpRequest` to bypass browser security restrictions.
+### 3.4 Security & Performance
+- **Sandbox Compatibility:** Uses `unsafeWindow` to bridge the gap between the userscript sandbox and WaniKani's global `wkof` object.
+- **CSP Compliance:** React is bundled to bypass strict Content Security Policies.
+- **Prompt Optimization:** Samples up to 50 items from the filtered set to keep AI token usage efficient.
 
-## 4. Build & Distribution
-- **Externalization:** React and ReactDOM are **fully** externalized. The `vite.config.ts` uses `jsxRuntime: 'classic'` and aliases for `react/jsx-runtime` to ensure zero React code is bundled.
-- **File Size:** Optimized to ~11 KB.
-- **Output:** A single, transparent `.user.js` file in the `dist/` directory.
-- **Compliance:** Minification is disabled for Greasyfork transparency.
-
-## 5. Security Standards
-- **Key Storage:** API keys are stored only in the user's local userscript storage via `GM_setValue`.
-- **Communication:** All API calls are made over encrypted HTTPS.
+## 4. Developer Guide
+- **Build:** `npm run build` generates the `.user.js` in `/dist`.
+- **Version Sync:** Version numbers must be synchronized across `package.json`, `vite.config.ts`, and the console log in `main.tsx`.

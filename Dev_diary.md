@@ -19,7 +19,7 @@
 
 ## 2026-03-01: Sprint 4 Completion (v0.2.0)
 
-### Sprint 4: Advanced Intelligence & Native Aesthetics
+### Sprint 4: Advanced Focus Selection
 - [x] **WK-010: Advanced Focus Selection** (Complete)
     - Implemented "Focus Matrix" UI in settings with toggle logic.
     - Added mutual exclusion for "All" vs. specific filters.
@@ -28,23 +28,25 @@
     - Added persistence for focus settings using `GM_setValue`.
     - Implemented "Option 1" for focus logic (allows empty selection, disables generation with warning).
 
-### Retrospective:
-- **Major Milestone:** Achieved v0.2.0 with targeted study logic.
-- **Bug Discovery:** Identified that `window.wkof` detection is failing in some environments (WK-016). This will be the priority for the next sprint.
-- **UI Scaling:** Noted that the injection is causing some dashboard header stretching; added WK-017 to the backlog to address this in the UI Refinement phase.
-- **Process Improvement:** Synchronizing version numbers in `vite.config.ts` and `package.json` is critical for release consistency.
-
 ## 2026-03-01: Sprint 5 Completion (v0.2.8) - Stability & Connectivity
 
 ### Bugfix: WKOF Scan Hang & Detection
 - [x] **WK-016: Bugfix - WKOF Detection** (Complete)
-    - Switched to `unsafeWindow` and `document-start` for early detection.
 - [x] **WK-018: Bugfix - WKOF Scan Hang** (Complete)
-    - Identified that `srs_stage` filter required an external WKOF module. Moved SRS filtering to local JS logic.
-    - Integrated `review_statistics` for accurate "Leech" detection (Score: `incorrect / srs_stage^1.5`).
-    - Added 15s safety timeouts and detailed console logging for better diagnostics.
+    - Moved SRS filtering to local JS logic.
+    - Integrated `review_statistics` for accurate "Leech" detection.
+
+## 2026-03-01: Sprint 6 Completion (v0.2.13) - UI Layout & Scoping
+
+### Bugfix: UI Layout & Scoping
+- [x] **WK-017: Bugfix - UI Layout & Scoping** (Complete)
+    - Implemented **"Virtual Widget"** system to mimic native dashboard behavior.
+    - Added **MutationObserver** to handle WaniKani's dynamic DOM loading (fixed "parameter 1 is not a Node" error).
+    - Added **Widget Placement** setting: Top, Below Level Progress, or Bottom.
+    - Wrapped injection in native `.dashboard__row` and `.dashboard__widget` classes to fix layout stretching.
+    - Implemented a "Dismiss" (✖) button for session-based modularity.
+    - Restored detailed informative status messages (Level, item counts) that were regressed during troubleshooting.
 
 ### Retrospective:
-- **Filtering Logic:** Current filters are additive (Level 1-10 OR Leeches). User feedback suggests intersection (Leeches FROM Level 1-10) is preferred. Added WK-019 to Backlog.
-- **Injection Issues:** Discovered that the script is currently active on the "Settings" page and other non-dashboard pages, causing layout issues. WK-017 is now a high priority.
-- **Technical Growth:** The script is now highly robust, with clear logging and improved sandbox compatibility.
+- **Injection Resilience:** MutationObserver is essential for WaniKani's modern dashboard, as elements load at different times.
+- **Native Alignment:** Using native classes like `.dashboard__row` is safer than raw positioning for long-term stability.
