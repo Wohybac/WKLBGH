@@ -12,16 +12,14 @@ export default defineConfig({
         name: 'WKLBGH',
         icon: 'https://www.wanikani.com/favicon.ico',
         namespace: 'npm/vite-plugin-monkey',
-        version: '0.2.1', // WKOF fix update
+        version: '0.2.8', // Review Statistics integration for Leeches update
         match: [
           'https://www.wanikani.com/*',
         ],
         description: 'WKLBGH - WaniKani Lesson Based Grammar Helper: Manage your lessons with Gemini AI assistance.',
         'run-at': 'document-start',
         grant: ['GM_setValue', 'GM_getValue', 'GM_xmlhttpRequest', 'GM_addStyle', 'unsafeWindow'],
-        require: [
-          'https://greasyfork.org/scripts/38581-wanikani-open-framework/code/Wanikani%20Open%20Framework.user.js'
-        ],
+        // REMOVED WKOF @require to avoid conflicts with user-installed version
       },
     }),
   ],

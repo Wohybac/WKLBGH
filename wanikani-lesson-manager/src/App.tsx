@@ -85,18 +85,29 @@ function App() {
     });
   };
 
+  const withTimeout = (promise: Promise<any>, ms: number, errorMessage: string) => {
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(errorMessage)), ms)
+    );
+    return Promise.race([promise, timeout]);
+  };
+
   const scanLearnedItems = async () => {
+    console.log('[WKLBGH] scanLearnedItems triggered.');
     const wkof = (unsafeWindow as any).wkof || (window as any).wkof;
+    
     if (!wkof) {
+      console.error('[WKLBGH] WKOF not found.');
       setStatus('WKOF not found. Please install WaniKani Open Framework.');
       return;
     }
 
     setStatus('Scanning via WKOF...');
     try {
-      await wkof.include('ItemData');
-      await wkof.ready('ItemData');
-
+      console.log('[WKLBGH] Initializing ItemData module...');
+      await withTimeout(wkof.include('ItemData'), 5000, 'Module Load Timeout (include)');
+      await withTimeout(wkof.ready('ItemData'), 5000, 'Module Ready Timeout (ready)');
+      
       if (focusSettings.length === 0) {
         setLearnedCount({ kanji: 0, vocabulary: 0 });
         setLearnedItems([]);
@@ -105,54 +116,80 @@ function App() {
       }
 
       const filterOptions: any = {
-        item_type: ['kan', 'voc'],
-        srs_stage: { value: 1, comparison: '>=' }
+        item_type: ['kan', 'voc']
       };
 
-      // Get all items initially, then filter manually for complex logic
-      let items = await wkof.ItemData.get_items({
-        wk_items: {
-          options: { assignments: true },
-          filters: filterOptions
+      console.log('[WKLBGH] Fetching items with assignments and review_statistics...');
+      const items = await withTimeout(
+        wkof.ItemData.get_items({
+          wk_items: {
+            options: { 
+                assignments: true,
+                review_statistics: true 
+            },
+            filters: filterOptions
+          }
+        }), 
+        15000, 
+        'Data Fetch Timeout (get_items)'
+      );
+      
+      console.log(`[WKLBGH] Fetched ${items.length} items from WKOF.`);
+
+      // Manual filtering for robustness
+      const filteredItems = items.filter((item: any) => {
+        const ass = item.assignments;
+        if (!ass || ass.srs_stage < 1) return false;
+
+        if (focusSettings.includes('all')) return true;
+
+        let keep = false;
+        
+        // 1. Level Spreads
+        focusSettings.forEach(s => {
+          if (s.includes('-')) {
+            const [min, max] = s.split('-').map(Number);
+            if (item.data.level >= min && item.data.level <= max) keep = true;
+          }
+        });
+
+        // 2. Most Recent (last 3 levels)
+        if (focusSettings.includes('recent') && item.data.level >= (userData?.level - 2)) keep = true;
+
+        // 3. Leeches
+        if (focusSettings.includes('leeches')) {
+          const stats = item.review_statistics;
+          if (stats) {
+            const meaning_incorrect = stats.meaning_incorrect || 0;
+            const reading_incorrect = stats.reading_incorrect || 0;
+            const total_incorrect = meaning_incorrect + reading_incorrect;
+            
+            const srs_stage = ass.srs_stage || 1;
+            
+            // Standard Leech Score formula: incorrect / (current_srs_stage^1.5)
+            const score = total_incorrect / Math.pow(srs_stage, 1.5);
+            
+            if (score > 1.0 || total_incorrect > 3 || (srs_stage === 9 && total_incorrect > 8)) {
+               keep = true;
+               console.log(`[WKLBGH] Leech detected: ${item.data.characters || item.data.slug} (Score: ${score.toFixed(2)}, Mistakes: ${total_incorrect}, Stage: ${srs_stage})`);
+            }
+          }
         }
+
+        return keep;
       });
 
-      if (!focusSettings.includes('all')) {
-        items = items.filter((item: any) => {
-          let keep = false;
-          
-          // Level Spreads
-          focusSettings.forEach(s => {
-            if (s.includes('-')) {
-              const [min, max] = s.split('-').map(Number);
-              if (item.data.level >= min && item.data.level <= max) keep = true;
-            }
-          });
+      const kanji = filteredItems.filter((i: any) => i.object === 'kanji');
+      const vocab = filteredItems.filter((i: any) => i.object === 'vocabulary');
 
-          // Most Recent (last 3 levels)
-          if (focusSettings.includes('recent')) {
-            if (item.data.level >= (userData.level - 2)) keep = true;
-          }
-
-          // Leeches (Heuristic: more than 5 total incorrect answers)
-          if (focusSettings.includes('leeches')) {
-            const ass = item.assignments;
-            if (ass && (ass.meaning_incorrect + ass.reading_incorrect) > 5) keep = true;
-          }
-
-          return keep;
-        });
-      }
-
-      const kanji = items.filter((i: any) => i.object === 'kanji');
-      const vocab = items.filter((i: any) => i.object === 'vocabulary');
+      console.log(`[WKLBGH] Final filtered counts - Kanji: ${kanji.length}, Vocab: ${vocab.length}`);
 
       setLearnedCount({ kanji: kanji.length, vocabulary: vocab.length });
-      setLearnedItems(items);
+      setLearnedItems(filteredItems);
       setStatus(`Scan Complete: ${kanji.length} Kanji, ${vocab.length} Vocab found.`);
-    } catch (e) {
-      console.error(e);
-      setStatus('WKOF Scan Failed.');
+    } catch (e: any) {
+      console.error('[WKLBGH] Scan Failed:', e);
+      setStatus(`Scan Failed: ${e.message || 'Unknown error'}`);
     }
   };
 
@@ -163,8 +200,6 @@ function App() {
       return;
     }
     setStatus('Gemini is generating an exercise...');
-    
-    // Sample items to keep prompt size manageable
     const sampledItems = learnedItems.sort(() => 0.5 - Math.random()).slice(0, 50);
     const itemStrings = sampledItems.map(i => i.data.characters || i.data.slug).join(', ');
 
@@ -179,9 +214,7 @@ function App() {
       method: 'POST',
       url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
       headers: { 'Content-Type': 'application/json' },
-      data: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      }),
+      data: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
       onload: (response) => {
         if (response.status === 200) {
           const data = JSON.parse(response.responseText);
@@ -220,16 +253,9 @@ function App() {
 
   return (
     <div className="wklbgh-panel" style={{
-      border: '4px solid #007bff', 
-      padding: '25px', 
-      margin: '20px auto', 
-      backgroundColor: '#fff', 
-      color: '#333',
-      borderRadius: '12px',
-      boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-      fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
-      maxWidth: '1100px',
-      display: 'block'
+      border: '4px solid #007bff', padding: '25px', margin: '20px auto', backgroundColor: '#fff', color: '#333',
+      borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+      fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', maxWidth: '1100px', display: 'block'
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ margin: 0, fontSize: '22px', color: '#007bff', fontWeight: 'bold' }}>WKLBGH - WaniKani Lesson Based Grammar Helper</h1>
@@ -239,7 +265,6 @@ function App() {
       {showSettings ? (
         <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '8px', marginBottom: '15px' }}>
           <h2 style={{ fontSize: '18px', marginTop: 0 }}>Settings</h2>
-          
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold' }}>WaniKani Key:</label>
@@ -250,12 +275,9 @@ function App() {
               <input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }} />
             </div>
           </div>
-
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: 'bold' }}>Focus Area:</label>
-            {focusSettings.length === 0 && (
-               <div style={{ color: '#dc3545', fontSize: '12px', marginBottom: '10px', fontWeight: 'bold' }}>⚠️ Please select at least one focus area to scan items.</div>
-            )}
+            {focusSettings.length === 0 && <div style={{ color: '#dc3545', fontSize: '12px', marginBottom: '10px', fontWeight: 'bold' }}>⚠️ Please select at least one focus area to scan items.</div>}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}>
               <FocusButton id="all" label="All" />
               <FocusButton id="recent" label="Most Recent" />
@@ -263,54 +285,24 @@ function App() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               {levelSpreads.map(spread => (
-                <FocusButton 
-                  key={spread} 
-                  id={spread} 
-                  label={spread} 
-                  disabled={isLevelDisabled(spread)}
-                  tooltip={isLevelDisabled(spread) ? "Turtles not ready yet! Do at least one lesson from a level in this spread to select this option!" : ""}
-                />
+                <FocusButton key={spread} id={spread} label={spread} disabled={isLevelDisabled(spread)} tooltip={isLevelDisabled(spread) ? "Turtles not ready yet!" : ""} />
               ))}
             </div>
           </div>
-
           <button onClick={saveSettings} style={{ padding: '12px 24px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}>Save & Close</button>
         </div>
       ) : (
         <div>
-          <div style={{ backgroundColor: '#f8f9fa', padding: '12px', borderRadius: '6px', marginBottom: '20px', borderLeft: '5px solid #007bff' }}>
-             <strong>Status:</strong> {status}
-          </div>
+          <div style={{ backgroundColor: '#f8f9fa', padding: '12px', borderRadius: '6px', marginBottom: '20px', borderLeft: '5px solid #007bff' }}><strong>Status:</strong> {status}</div>
           <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
             <button onClick={scanLearnedItems} style={{ flex: 1, padding: '12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Scan Progress (WKOF)</button>
-            <button 
-                onClick={generateExercise} 
-                disabled={learnedCount.kanji === 0 || focusSettings.length === 0} 
-                style={{ 
-                    flex: 1, 
-                    padding: '12px', 
-                    backgroundColor: (learnedCount.kanji > 0 && focusSettings.length > 0) ? '#28a745' : '#ccc', 
-                    color: '#fff', 
-                    border: 'none', 
-                    borderRadius: '6px', 
-                    cursor: (learnedCount.kanji > 0 && focusSettings.length > 0) ? 'pointer' : 'not-allowed', 
-                    fontWeight: 'bold' 
-                }}
-            >
-                Generate Lesson
-            </button>
+            <button onClick={generateExercise} disabled={learnedCount.kanji === 0 || focusSettings.length === 0} style={{ 
+                flex: 1, padding: '12px', backgroundColor: (learnedCount.kanji > 0 && focusSettings.length > 0) ? '#28a745' : '#ccc', color: '#fff', 
+                border: 'none', borderRadius: '6px', cursor: (learnedCount.kanji > 0 && focusSettings.length > 0) ? 'pointer' : 'not-allowed', fontWeight: 'bold' 
+            }}>Generate Lesson</button>
           </div>
-          {focusSettings.length === 0 && (
-             <div style={{ textAlign: 'center', color: '#dc3545', marginBottom: '20px', fontSize: '14px', fontWeight: 'bold' }}>
-                Please go to settings (⚙️) and select a Focus Area first!
-             </div>
-          )}
-
-          {exercise && (
-            <div style={{ padding: '20px', backgroundColor: '#fff', borderRadius: '6px', whiteSpace: 'pre-wrap', maxHeight: '500px', overflowY: 'auto', fontSize: '16px', border: '1px solid #ddd', lineHeight: '1.6' }}>
-              {exercise}
-            </div>
-          )}
+          {focusSettings.length === 0 && <div style={{ textAlign: 'center', color: '#dc3545', marginBottom: '20px', fontSize: '14px', fontWeight: 'bold' }}>Please go to settings (⚙️) and select a Focus Area first!</div>}
+          {exercise && <div style={{ padding: '20px', backgroundColor: '#fff', borderRadius: '6px', whiteSpace: 'pre-wrap', maxHeight: '500px', overflowY: 'auto', fontSize: '16px', border: '1px solid #ddd', lineHeight: '1.6' }}>{exercise}</div>}
         </div>
       )}
     </div>
