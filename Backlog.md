@@ -15,7 +15,11 @@
 - [x] **WK-009: WKOF Integration** - Integrate WaniKani Open Framework for high-performance subject caching.
 - [x] **WK-013.1: CSS Theme Alignment** - Cleaned up global CSS to prevent black background issues.
 
+## Sprint 4: Advanced Focus Selection (Current)
+- [ ] **WK-010: Advanced Focus Selection** - Implement the Focus Matrix in settings to allow targeting by level spreads, 'Most Recent', and 'Leeches'.
+
 ## Future Sprints (Planned)
-- [ ] **WK-010: Advanced Prompt Engineering** - Refine Gemini prompts for Japanese grammar practice using actual subject data.
-- [ ] **WK-011: Testing Suite** - Set up Vitest and write initial unit tests.
-- [ ] **WK-013: UI Refinement** - Beautify the panel into a native WaniKani-looking widget.
+- [ ] **WK-014: Prompt Engineering & Tinkering** - (High Priority) Refine and iterate on Gemini prompts using the focused data to ensure natural and level-appropriate exercises.
+- [ ] **WK-011: Testing Suite** - Set up Vitest and write initial unit tests for data filtering and state logic.
+- [ ] **WK-013: UI Refinement** - Beautify the panel into a native WaniKani-looking widget with improved CSS and layouts.
+- [ ] **WK-015: Settings Menu Restructuring** - (Medium Priority) Organize settings into sub-menus or tabs for better UX as the feature set grows.

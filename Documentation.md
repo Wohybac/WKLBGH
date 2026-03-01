@@ -22,12 +22,20 @@ To prevent WaniKani's internal React engine from unmounting our UI, the script i
 ### 3.2 State & Data Management
 The application state is managed within the root `App.tsx` component using React `useState`. 
 - **API Keys:** Stored in the browser's userscript storage (`GM_setValue`).
-- **User Progress:** Fetched from WaniKani's `/assignments` endpoint.
+- **Focus Settings:** Persisted array of selected filters (e.g., `['1-10', 'recent']`).
+- **User Progress:** Fetched from WaniKani's `/assignments` endpoint via WKOF.
 - **Learned Items:** Defined as assignments where `srs_stage > 0` and `started = true`.
 
-### 3.3 External Integrations
-- **WaniKani API:** All requests include the `Wanikani-Revision: 20170710` header.
-- **Gemini API:** Uses the `generateContent` endpoint. Prompts are constructed using the user's level and learned item counts.
+### 3.3 Data Filtering Logic (Sprint 4 Update)
+The `scanLearnedItems` function performs multi-stage filtering after receiving data from WKOF:
+1.  **Level Spreads:** Filters items by user-selected ranges (e.g., 1-10, 11-20). Ranges are only selectable if the user has reached at least the minimum level of that range.
+2.  **Most Recent:** Dynamically filters items from levels `[user_level, user_level-1, user_level-2]`.
+3.  **Leeches:** Identifies items with a heuristic score based on `meaning_incorrect + reading_incorrect > 5`.
+4.  **Mutual Exclusion:** The "All" option clears all other filters, and selecting any specific filter removes "All".
+
+### 3.4 External Integrations
+...
+- **Gemini API:** Uses the `generateContent` endpoint. Prompts are constructed using the user's level and a random sample of up to 50 items from the filtered "Learned Items" set to optimize prompt size and relevance.
 - **CORS Handling:** All API communication uses `GM_xmlhttpRequest` to bypass browser security restrictions.
 
 ## 4. Build & Distribution

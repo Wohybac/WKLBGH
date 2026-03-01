@@ -12,11 +12,15 @@ declare global {
 function App() {
   const [apiKey, setApiKey] = useState(GM_getValue('wk_api_key', ''));
   const [geminiKey, setGeminiKey] = useState(GM_getValue('gemini_api_key', ''));
+  const [focusSettings, setFocusSettings] = useState<string[]>(GM_getValue('wklbgh_focus_settings', ['all']));
   const [showSettings, setShowSettings] = useState(!apiKey);
   const [status, setStatus] = useState('Idle (WKOF Integrated)');
   const [userData, setUserData] = useState<any>(null);
   const [learnedCount, setLearnedCount] = useState({ kanji: 0, vocabulary: 0 });
+  const [learnedItems, setLearnedItems] = useState<any[]>([]);
   const [exercise, setExercise] = useState('');
+
+  const levelSpreads = ['1-10', '11-20', '21-30', '31-40', '41-50', '51-60'];
 
   useEffect(() => {
     if (apiKey) {
@@ -27,8 +31,35 @@ function App() {
   const saveSettings = () => {
     GM_setValue('wk_api_key', apiKey);
     GM_setValue('gemini_api_key', geminiKey);
+    GM_setValue('wklbgh_focus_settings', focusSettings);
     setShowSettings(false);
     verifyApiKey(apiKey);
+  };
+
+  const toggleFocus = (id: string) => {
+    let newSettings = [...focusSettings];
+    if (id === 'all') {
+      if (!newSettings.includes('all')) {
+        const confirmAll = window.confirm('Selecting "All" can be resource intensive and may take longer to generate. Proceed?');
+        if (confirmAll) newSettings = ['all'];
+      }
+    } else {
+      newSettings = newSettings.filter(s => s !== 'all');
+      if (newSettings.includes(id)) {
+        newSettings = newSettings.filter(s => s !== id);
+      } else {
+        newSettings.push(id);
+      }
+      if (newSettings.length === 0) newSettings = ['all'];
+    }
+    setFocusSettings(newSettings);
+    GM_setValue('wklbgh_focus_settings', newSettings);
+  };
+
+  const isLevelDisabled = (spread: string) => {
+    if (!userData) return true;
+    const [min] = spread.split('-').map(Number);
+    return userData.level < min;
   };
 
   const verifyApiKey = (key: string) => {
@@ -61,26 +92,55 @@ function App() {
 
     setStatus('Scanning via WKOF...');
     try {
-      // Initialize WKOF ItemData module
       await window.wkof.include('ItemData');
       await window.wkof.ready('ItemData');
 
-      // Get items that have been started (learned)
-      const items = await window.wkof.ItemData.get_items({
+      const filterOptions: any = {
+        item_type: ['kan', 'voc'],
+        srs_stage: { value: 1, comparison: '>=' }
+      };
+
+      // Get all items initially, then filter manually for complex logic
+      let items = await window.wkof.ItemData.get_items({
         wk_items: {
           options: { assignments: true },
-          filters: {
-            item_type: ['kan', 'voc'],
-            srs_stage: { value: 1, comparison: '>=' } // SRS Stage 1+ means learned
-          }
+          filters: filterOptions
         }
       });
 
-      const kanji = items.filter((i: any) => i.object === 'kanji').length;
-      const vocab = items.filter((i: any) => i.object === 'vocabulary').length;
+      if (!focusSettings.includes('all')) {
+        items = items.filter((item: any) => {
+          let keep = false;
+          
+          // Level Spreads
+          focusSettings.forEach(s => {
+            if (s.includes('-')) {
+              const [min, max] = s.split('-').map(Number);
+              if (item.data.level >= min && item.data.level <= max) keep = true;
+            }
+          });
 
-      setLearnedCount({ kanji, vocabulary: vocab });
-      setStatus(`WKOF Scan Complete: ${kanji} Kanji, ${vocab} Vocabulary found.`);
+          // Most Recent (last 3 levels)
+          if (focusSettings.includes('recent')) {
+            if (item.data.level >= (userData.level - 2)) keep = true;
+          }
+
+          // Leeches (Heuristic: more than 5 total incorrect answers)
+          if (focusSettings.includes('leeches')) {
+            const ass = item.assignments;
+            if (ass && (ass.meaning_incorrect + ass.reading_incorrect) > 5) keep = true;
+          }
+
+          return keep;
+        });
+      }
+
+      const kanji = items.filter((i: any) => i.object === 'kanji');
+      const vocab = items.filter((i: any) => i.object === 'vocabulary');
+
+      setLearnedCount({ kanji: kanji.length, vocabulary: vocab.length });
+      setLearnedItems(items);
+      setStatus(`Scan Complete: ${kanji.length} Kanji, ${vocab.length} Vocab found.`);
     } catch (e) {
       console.error(e);
       setStatus('WKOF Scan Failed.');
@@ -95,10 +155,15 @@ function App() {
     }
     setStatus('Gemini is generating an exercise...');
     
+    // Sample items to keep prompt size manageable
+    const sampledItems = learnedItems.sort(() => 0.5 - Math.random()).slice(0, 50);
+    const itemStrings = sampledItems.map(i => i.data.characters || i.data.slug).join(', ');
+
     const prompt = `I am a WaniKani student at level ${userData?.level || 'unknown'}. 
     I have learned ${learnedCount.kanji} Kanji and ${learnedCount.vocabulary} Vocabulary words.
+    FOCUS ITEMS: ${itemStrings}
     Please generate a short Japanese grammar explanation and 3 practice sentences.
-    IMPORTANT: Use ONLY simple Kanji and vocabulary suitable for my level.
+    IMPORTANT: Use ONLY simple Kanji and vocabulary suitable for my level, prioritizing the FOCUS ITEMS provided.
     Provide the response in English, with Japanese sentences (and furigana/English translations).`;
 
     GM_xmlhttpRequest({
@@ -120,9 +185,33 @@ function App() {
     });
   };
 
+  const FocusButton = ({ id, label, disabled = false, tooltip = '' }: any) => {
+    const isSelected = focusSettings.includes(id);
+    return (
+      <button 
+        onClick={() => !disabled && toggleFocus(id)}
+        disabled={disabled}
+        title={tooltip}
+        style={{
+          padding: '10px',
+          borderRadius: '6px',
+          border: '1px solid #ddd',
+          backgroundColor: isSelected ? '#007bff' : (disabled ? '#f0f0f0' : '#fff'),
+          color: isSelected ? '#fff' : (disabled ? '#aaa' : '#333'),
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          fontWeight: 'bold',
+          opacity: disabled ? 0.6 : 1,
+          transition: 'all 0.2s'
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
+
   return (
     <div className="wklbgh-panel" style={{
-      border: '4px solid #007bff', // BLUE for WKOF version
+      border: '4px solid #007bff', 
       padding: '25px', 
       margin: '20px auto', 
       backgroundColor: '#fff', 
@@ -140,16 +229,40 @@ function App() {
 
       {showSettings ? (
         <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '8px', marginBottom: '15px' }}>
-          <h2 style={{ fontSize: '18px', marginTop: 0 }}>API Settings</h2>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px' }}>WaniKani Key:</label>
-            <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }} />
+          <h2 style={{ fontSize: '18px', marginTop: 0 }}>Settings</h2>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold' }}>WaniKani Key:</label>
+              <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold' }}>Gemini Key:</label>
+              <input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }} />
+            </div>
           </div>
+
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px' }}>Gemini Key:</label>
-            <input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }} />
+            <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: 'bold' }}>Focus Area:</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+              <FocusButton id="all" label="All" />
+              <FocusButton id="recent" label="Most Recent" />
+              <FocusButton id="leeches" label="Leeches" />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              {levelSpreads.map(spread => (
+                <FocusButton 
+                  key={spread} 
+                  id={spread} 
+                  label={spread} 
+                  disabled={isLevelDisabled(spread)}
+                  tooltip={isLevelDisabled(spread) ? "Turtles not ready yet! Do at least one lesson from a level in this spread to select this option!" : ""}
+                />
+              ))}
+            </div>
           </div>
-          <button onClick={saveSettings} style={{ padding: '12px 24px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Save Settings</button>
+
+          <button onClick={saveSettings} style={{ padding: '12px 24px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}>Save & Close</button>
         </div>
       ) : (
         <div>
