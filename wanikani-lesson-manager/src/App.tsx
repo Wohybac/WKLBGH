@@ -19,6 +19,7 @@ function App() {
   const [userData, setUserData] = useState<any>(null);
   const [learnedCount, setLearnedCount] = useState({ kanji: 0, vocabulary: 0 });
   const [learnedItems, setLearnedItems] = useState<any[]>([]);
+  const [activeModel, setActiveModel] = useState(GM_getValue('wklbgh_active_model', ''));
   const [exercise, setExercise] = useState('');
   const [isDismissed, setIsDismissed] = useState(false);
 
@@ -27,6 +28,58 @@ function App() {
   useEffect(() => {
     if (apiKey) verifyApiKey(apiKey);
   }, []);
+
+  const discoverAndTestModel = async () => {
+    setStatus('Discovering models...');
+    return new Promise<string>((resolve, reject) => {
+      GM_xmlhttpRequest({
+        method: 'GET',
+        url: `https://generativelanguage.googleapis.com/v1/models?key=${geminiKey}`,
+        onload: (res) => {
+          try {
+            const data = JSON.parse(res.responseText);
+            const models = data.models || [];
+            const supported = models.filter((m: any) => m.supportedGenerationMethods.includes('generateContent'));
+            
+            const priorities = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro', 'gemini-pro'];
+            let bestModelName = '';
+
+            for (const p of priorities) {
+              const match = supported.find((m: any) => m.name.endsWith(p));
+              if (match) { bestModelName = match.name; break; }
+            }
+
+            if (!bestModelName && supported.length > 0) bestModelName = supported[0].name;
+
+            if (bestModelName) {
+              console.log('Discovery found:', bestModelName);
+              // Test it immediately
+              GM_xmlhttpRequest({
+                method: 'POST',
+                url: `https://generativelanguage.googleapis.com/v1/${bestModelName}:generateContent?key=${geminiKey}`,
+                headers: { 'Content-Type': 'application/json' },
+                data: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] }),
+                onload: (testRes) => {
+                  if (testRes.status === 200) {
+                    const modelId = bestModelName.split('/').pop() || bestModelName;
+                    GM_setValue('wklbgh_active_model', modelId);
+                    setActiveModel(modelId);
+                    resolve(modelId);
+                  } else {
+                    reject(new Error(`Model ${bestModelName} failed test prompt.`));
+                  }
+                },
+                onerror: () => reject(new Error('Network error during model test'))
+              });
+            } else {
+              reject(new Error('No supported models found for this API key.'));
+            }
+          } catch (e) { reject(e); }
+        },
+        onerror: () => reject(new Error('Failed to list models.'))
+      });
+    });
+  };
 
   if (isDismissed) {
     return (
@@ -41,6 +94,8 @@ function App() {
     GM_setValue('gemini_api_key', geminiKey);
     GM_setValue('wklbgh_focus_settings', focusSettings);
     GM_setValue('wklbgh_placement', placement);
+    GM_setValue('wklbgh_active_model', ''); // Reset on key change
+    setActiveModel('');
     setShowSettings(false);
     verifyApiKey(apiKey);
     window.location.reload();
@@ -115,46 +170,41 @@ function App() {
     } catch (e: any) { setStatus(`Error: ${e.message}`); }
   };
 
-  const generateExercise = () => {
+  const generateExercise = async () => {
     if (!geminiKey) { setShowSettings(true); return; }
-    setStatus('Generating...');
+    
+    let modelToUse = activeModel;
+    if (!modelToUse) {
+      try {
+        modelToUse = await discoverAndTestModel();
+      } catch (e: any) {
+        setStatus(`Discovery Error: ${e.message}`);
+        return;
+      }
+    }
 
-    const tryModel = (modelId: string, version: string) => {
-      console.log(`Trying model: ${modelId} with version: ${version}`);
-      
-      const testPrompt = "Confirm you are listening and ready to receive prompts";
-      const prompt = testPrompt;
+    setStatus(`Generating with ${modelToUse}...`);
+    const prompt = "Confirm you are listening and ready to receive prompts";
 
-      GM_xmlhttpRequest({
-        method: 'POST',
-        url: `https://generativelanguage.googleapis.com/${version}/models/${modelId}:generateContent?key=${geminiKey}`,
-        headers: { 'Content-Type': 'application/json' },
-        data: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-        onload: (response) => {
-          console.log(`Gemini ${modelId} Response Status:`, response.status);
-          if (response.status === 200) {
-            try {
-              const data = JSON.parse(response.responseText);
-              if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts[0]) {
-                setExercise(data.candidates[0].content.parts[0].text);
-                setStatus(`Success with ${modelId}!`);
-              }
-            } catch (e) { setStatus('JSON Error'); }
-          } else if (modelId === 'gemini-1.5-flash') {
-            tryModel('gemini-1.5-flash-latest', 'v1beta');
-          } else if (modelId === 'gemini-1.5-flash-latest') {
-            tryModel('gemini-pro', 'v1');
-          } else {
-            console.error('All model attempts failed:', response.responseText);
-            setStatus(`API Error (${response.status})`);
-          }
-        },
-        onerror: () => setStatus('Network Error')
-      });
-    };
-
-    // Start the attempt chain
-    tryModel('gemini-1.5-flash', 'v1beta');
+    GM_xmlhttpRequest({
+      method: 'POST',
+      url: `https://generativelanguage.googleapis.com/v1/models/${modelToUse}:generateContent?key=${geminiKey}`,
+      headers: { 'Content-Type': 'application/json' },
+      data: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      onload: (response) => {
+        if (response.status === 200) {
+          const data = JSON.parse(response.responseText);
+          setExercise(data.candidates[0].content.parts[0].text);
+          setStatus(`Success! (${modelToUse})`);
+        } else {
+          console.error('Final API Error:', response.responseText);
+          setStatus(`API Error: ${response.status}`);
+          setActiveModel(''); // Reset for retry
+          GM_setValue('wklbgh_active_model', '');
+        }
+      },
+      onerror: () => setStatus('Network Error')
+    });
   };
 
   const FocusButton = ({ id, label, disabled = false }: any) => {
