@@ -81,3 +81,31 @@ export const filterItems = (
     return keep;
   });
 };
+
+export interface Option {
+  id: string;
+  text: string;
+  is_correct: boolean;
+  explanation: string;
+}
+
+export interface Question {
+  id: number;
+  sentence_with_blank: string;
+  english_translation: string;
+  tested_grammar_point: string;
+  options: Option[];
+}
+
+export interface Lesson {
+  lesson_title: string;
+  questions: Question[];
+}
+
+export const parseGeminiResponse = (text: string): Lesson => {
+  let cleaned = text.trim();
+  if (cleaned.startsWith('```json')) cleaned = cleaned.substring(7);
+  if (cleaned.startsWith('```')) cleaned = cleaned.substring(3);
+  if (cleaned.endsWith('```')) cleaned = cleaned.substring(0, cleaned.length - 3);
+  return JSON.parse(cleaned.trim());
+};

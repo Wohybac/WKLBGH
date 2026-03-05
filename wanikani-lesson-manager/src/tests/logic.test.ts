@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { filterItems, isLeech, WaniKaniItem } from '../logic';
+import { filterItems, isLeech, parseGeminiResponse, WaniKaniItem } from '../logic';
 
 describe('Logic Utilities', () => {
   const mockItems: WaniKaniItem[] = [
@@ -64,6 +64,27 @@ describe('Logic Utilities', () => {
     it('should handle "all" setting', () => {
       const filtered = filterItems(mockItems, ['all'], 20);
       expect(filtered).toHaveLength(3);
+    });
+  });
+
+  describe('parseGeminiResponse', () => {
+    const validJsonString = '{"lesson_title": "Test Lesson", "questions": []}';
+    
+    it('should parse raw JSON correctly', () => {
+      const result = parseGeminiResponse(validJsonString);
+      expect(result.lesson_title).toBe('Test Lesson');
+    });
+
+    it('should strip markdown json tags and parse correctly', () => {
+      const markdownWrapped = `\`\`\`json\n${validJsonString}\n\`\`\``;
+      const result = parseGeminiResponse(markdownWrapped);
+      expect(result.lesson_title).toBe('Test Lesson');
+    });
+
+    it('should strip plain markdown ticks and parse correctly', () => {
+      const tickWrapped = `\`\`\`\n${validJsonString}\n\`\`\``;
+      const result = parseGeminiResponse(tickWrapped);
+      expect(result.lesson_title).toBe('Test Lesson');
     });
   });
 });

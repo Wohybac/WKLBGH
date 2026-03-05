@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GM_getValue, GM_setValue, GM_xmlhttpRequest, unsafeWindow } from '$';
-import { filterItems } from './logic';
+import { filterItems, parseGeminiResponse, Lesson } from './logic';
 import { buildGrammarLessonPrompt } from './prompts';
 import './App.css';
 
@@ -9,6 +9,8 @@ declare global {
     wkof: any;
   }
 }
+
+type AppState = 'idle' | 'generating' | 'ready' | 'active' | 'results';
 
 function App() {
   const [apiKey, setApiKey] = useState(GM_getValue('wk_api_key', ''));
@@ -23,6 +25,12 @@ function App() {
   const [activeModel, setActiveModel] = useState(GM_getValue('wklbgh_active_model', ''));
   const [exercise, setExercise] = useState('');
   const [isDismissed, setIsDismissed] = useState(false);
+
+  // Lesson State
+  const [appState, setAppState] = useState<AppState>('idle');
+  const [lessonData, setLessonData] = useState<Lesson | null>(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
 
   const levelSpreads = ['1-10', '11-20', '21-30', '31-40', '41-50', '51-60'];
 
@@ -174,12 +182,16 @@ function App() {
   const generateExercise = async () => {
     if (!geminiKey) { setShowSettings(true); return; }
     
+    setAppState('generating');
+    setStatus('Generating lesson...');
+
     let modelToUse = activeModel;
     if (!modelToUse) {
       try {
         modelToUse = await discoverAndTestModel();
       } catch (e: any) {
         setStatus(`Discovery Error: ${e.message}`);
+        setAppState('idle');
         return;
       }
     }
@@ -197,17 +209,30 @@ function App() {
       data: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
       onload: (response) => {
         if (response.status === 200) {
-          const data = JSON.parse(response.responseText);
-          setExercise(data.candidates[0].content.parts[0].text);
-          setStatus(`Success! (${modelToUse})`);
+          try {
+            const data = JSON.parse(response.responseText);
+            const textResponse = data.candidates[0].content.parts[0].text;
+            const parsedLesson = parseGeminiResponse(textResponse);
+            setLessonData(parsedLesson);
+            setAppState('ready');
+            setStatus('Lesson Ready!');
+          } catch (e) {
+            console.error('Failed to parse lesson JSON:', e);
+            setStatus('Error parsing lesson format.');
+            setAppState('idle');
+          }
         } else {
           console.error('Final API Error:', response.responseText);
           setStatus(`API Error: ${response.status}`);
           setActiveModel(''); // Reset for retry
           GM_setValue('wklbgh_active_model', '');
+          setAppState('idle');
         }
       },
-      onerror: () => setStatus('Network Error')
+      onerror: () => {
+        setStatus('Network Error');
+        setAppState('idle');
+      }
     });
   };
 
@@ -220,6 +245,141 @@ function App() {
         color: isSelected ? '#fff' : (disabled ? '#aaa' : '#333'),
         cursor: disabled ? 'not-allowed' : 'pointer', fontWeight: 'bold', opacity: disabled ? 0.6 : 1
       }}>{label}</button>
+    );
+  };
+
+  const handleOptionClick = (optionId: string) => {
+    if (selectedAnswers[currentQuestionIndex]) return; 
+    setSelectedAnswers(prev => ({ ...prev, [currentQuestionIndex]: optionId }));
+  };
+
+  const handleNext = () => {
+    if (lessonData && currentQuestionIndex < lessonData.questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    } else {
+      setAppState('results');
+    }
+  };
+
+  const resetLesson = () => {
+    setLessonData(null);
+    setCurrentQuestionIndex(0);
+    setSelectedAnswers({});
+    setAppState('idle');
+    setStatus(`Scan Complete: ${learnedCount.kanji} Kanji, ${learnedCount.vocabulary} Vocab found.`);
+  };
+
+  const renderActiveLesson = () => {
+    if (!lessonData) return null;
+    const currentQuestion = lessonData.questions[currentQuestionIndex];
+    const answeredOptionId = selectedAnswers[currentQuestionIndex];
+    const isAnswered = !!answeredOptionId;
+
+    return (
+      <div style={{ marginTop: '20px' }}>
+        <h2 style={{ fontSize: '18px', color: '#555', marginBottom: '15px' }}>Question {currentQuestionIndex + 1} of {lessonData.questions.length}</h2>
+        <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>{currentQuestion.sentence_with_blank}</div>
+        
+        {isAnswered && (
+          <div style={{ fontSize: '14px', color: '#666', marginBottom: '20px', fontStyle: 'italic' }}>
+            {currentQuestion.english_translation}
+          </div>
+        )}
+        {!isAnswered && <div style={{ marginBottom: '20px' }}></div>}
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+          {currentQuestion.options.map(option => {
+            let bgColor = '#f8f9fa';
+            let borderColor = '#ddd';
+            let textColor = '#333';
+
+            if (isAnswered) {
+              if (option.is_correct) {
+                bgColor = '#d4edda'; borderColor = '#c3e6cb'; textColor = '#155724';
+              } else if (option.id === answeredOptionId) {
+                bgColor = '#f8d7da'; borderColor = '#f5c6cb'; textColor = '#721c24';
+              }
+            }
+
+            return (
+              <button 
+                key={option.id}
+                onClick={() => handleOptionClick(option.id)}
+                disabled={isAnswered}
+                style={{
+                  padding: '15px', borderRadius: '8px', border: `2px solid ${borderColor}`,
+                  backgroundColor: bgColor, color: textColor,
+                  textAlign: 'left', fontSize: '16px', cursor: isAnswered ? 'default' : 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div style={{ fontWeight: 'bold', marginBottom: isAnswered && (option.is_correct || option.id === answeredOptionId) ? '8px' : '0' }}>
+                  {option.id}. {option.text}
+                </div>
+                {isAnswered && (option.is_correct || option.id === answeredOptionId) && (
+                  <div style={{ fontSize: '14px', marginTop: '5px', padding: '10px', backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: '4px' }}>
+                    {option.explanation}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <button 
+          onClick={handleNext}
+          style={{ width: '100%', padding: '15px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '16px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          {currentQuestionIndex < lessonData.questions.length - 1 ? 'Next Question' : 'Results'}
+        </button>
+      </div>
+    );
+  };
+
+  const renderResults = () => {
+    if (!lessonData) return null;
+    
+    let correct = 0;
+    let incorrect = 0;
+    let skipped = 0;
+
+    lessonData.questions.forEach((q, idx) => {
+      const answeredId = selectedAnswers[idx];
+      if (!answeredId) {
+        skipped++;
+      } else {
+        const selectedOption = q.options.find(o => o.id === answeredId);
+        if (selectedOption?.is_correct) correct++;
+        else incorrect++;
+      }
+    });
+
+    return (
+      <div style={{ marginTop: '20px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '24px', color: '#333', marginBottom: '20px' }}>Lesson Complete!</h2>
+        
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginBottom: '30px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', color: '#28a745' }}>✅ {correct}</div>
+            <div style={{ fontSize: '14px', color: '#666' }}>Correct</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', color: '#dc3545' }}>❌ {incorrect}</div>
+            <div style={{ fontSize: '14px', color: '#666' }}>Incorrect</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', color: '#6c757d' }}>⚪ {skipped}</div>
+            <div style={{ fontSize: '14px', color: '#666' }}>Skipped</div>
+          </div>
+        </div>
+
+        <button 
+          onClick={resetLesson}
+          style={{ width: '100%', padding: '15px', backgroundColor: '#6c757d', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '16px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          Return to Menu
+        </button>
+      </div>
     );
   };
 
@@ -260,12 +420,32 @@ function App() {
         </div>
       ) : (
         <div>
-          <div style={{ backgroundColor: '#f8f9fa', padding: '12px', borderRadius: '6px', marginBottom: '20px', borderLeft: '5px solid #007bff' }}><strong>Status:</strong> {status}</div>
-          <div style={{ display: 'flex', gap: '15px' }}>
-            <button onClick={scanLearnedItems} style={{ flex: 1, padding: '12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Scan Progress</button>
-            <button onClick={generateExercise} disabled={learnedCount.kanji === 0} style={{ flex: 1, padding: '12px', backgroundColor: learnedCount.kanji > 0 ? '#28a745' : '#ccc', color: '#fff', border: 'none', borderRadius: '6px' }}>Generate Lesson</button>
+          <div style={{ backgroundColor: '#f8f9fa', padding: '12px', borderRadius: '6px', marginBottom: '20px', borderLeft: '5px solid #007bff' }}>
+            <strong>Status:</strong> {status}
           </div>
-          {exercise && <div style={{ marginTop: '20px', padding: '20px', backgroundColor: '#fff', borderRadius: '6px', whiteSpace: 'pre-wrap', border: '1px solid #ddd' }}>{exercise}</div>}
+          
+          {appState === 'idle' && (
+            <div style={{ display: 'flex', gap: '15px' }}>
+              <button onClick={scanLearnedItems} style={{ flex: 1, padding: '12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Scan Progress</button>
+              <button onClick={generateExercise} disabled={learnedCount.kanji === 0} style={{ flex: 1, padding: '12px', backgroundColor: learnedCount.kanji > 0 ? '#28a745' : '#ccc', color: '#fff', border: 'none', borderRadius: '6px', cursor: learnedCount.kanji > 0 ? 'pointer' : 'not-allowed' }}>Generate Lesson</button>
+            </div>
+          )}
+
+          {appState === 'generating' && (
+            <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+              Generating your personalized lesson... Please wait.
+            </div>
+          )}
+
+          {appState === 'ready' && (
+            <button onClick={() => setAppState('active')} style={{ width: '100%', padding: '15px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '18px', cursor: 'pointer', fontWeight: 'bold' }}>
+              Start Lesson!
+            </button>
+          )}
+
+          {appState === 'active' && renderActiveLesson()}
+          {appState === 'results' && renderResults()}
+
         </div>
       )}
     </div>
