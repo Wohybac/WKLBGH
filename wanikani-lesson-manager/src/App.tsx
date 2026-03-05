@@ -119,53 +119,42 @@ function App() {
     if (!geminiKey) { setShowSettings(true); return; }
     setStatus('Generating...');
 
-    // DEBUG: List available models to see what we CAN use
-    GM_xmlhttpRequest({
-      method: 'GET',
-      url: `https://generativelanguage.googleapis.com/v1/models?key=${geminiKey}`,
-      onload: (res) => {
-        console.log('Available Models:', JSON.parse(res.responseText));
-      }
-    });
-    
-    // For testing: Using a simple prompt as requested
-    const testPrompt = "Confirm you are listening and ready to receive prompts";
-    const prompt = testPrompt;
+    const tryModel = (modelId: string, version: string) => {
+      console.log(`Trying model: ${modelId} with version: ${version}`);
+      
+      const testPrompt = "Confirm you are listening and ready to receive prompts";
+      const prompt = testPrompt;
 
-    console.log('Gemini Request Payload:', { contents: [{ parts: [{ text: prompt }] }] });
-
-    // Trying gemini-1.5-flash-002 which is a specific version
-    GM_xmlhttpRequest({
-      method: 'POST',
-      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
-      headers: { 'Content-Type': 'application/json' },
-      data: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-      onload: (response) => {
-        console.log('Gemini Response Status:', response.status);
-        if (response.status === 200) {
-          try {
-            const data = JSON.parse(response.responseText);
-            if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts[0]) {
-              setExercise(data.candidates[0].content.parts[0].text);
-              setStatus('Generated!');
-            } else {
-              console.error('Unexpected Gemini Response Format:', data);
-              setStatus('Format Error');
-            }
-          } catch (e) {
-            console.error('JSON Parse Error:', e);
-            setStatus('JSON Error');
+      GM_xmlhttpRequest({
+        method: 'POST',
+        url: `https://generativelanguage.googleapis.com/${version}/models/${modelId}:generateContent?key=${geminiKey}`,
+        headers: { 'Content-Type': 'application/json' },
+        data: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        onload: (response) => {
+          console.log(`Gemini ${modelId} Response Status:`, response.status);
+          if (response.status === 200) {
+            try {
+              const data = JSON.parse(response.responseText);
+              if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts[0]) {
+                setExercise(data.candidates[0].content.parts[0].text);
+                setStatus(`Success with ${modelId}!`);
+              }
+            } catch (e) { setStatus('JSON Error'); }
+          } else if (modelId === 'gemini-1.5-flash') {
+            tryModel('gemini-1.5-flash-latest', 'v1beta');
+          } else if (modelId === 'gemini-1.5-flash-latest') {
+            tryModel('gemini-pro', 'v1');
+          } else {
+            console.error('All model attempts failed:', response.responseText);
+            setStatus(`API Error (${response.status})`);
           }
-        } else {
-          console.error('Gemini API Error details:', response.responseText);
-          setStatus(`API Error (${response.status})`);
-        }
-      },
-      onerror: (err) => {
-        console.error('GM_xmlhttpRequest Error:', err);
-        setStatus('Network Error');
-      }
-    });
+        },
+        onerror: () => setStatus('Network Error')
+      });
+    };
+
+    // Start the attempt chain
+    tryModel('gemini-1.5-flash', 'v1beta');
   };
 
   const FocusButton = ({ id, label, disabled = false }: any) => {
