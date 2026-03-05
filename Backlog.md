@@ -24,6 +24,7 @@
 - [x] **WK-022: Lesson UI/UX Flow** - Design and implement the user flow for interacting with the generated lessons. (Dependent on WK-021)
 
 ### Medium Priority
+- [ ] **WK-026: Global User Statistics** - Track and store cumulative lesson stats (correct, incorrect, skipped) across all sessions. Stats should be tied to the specific WaniKani API key so data persists across key changes.
 - [ ] **WK-023: JLPT Difficulty Settings** - Add JLPT level options (N5-N1) to the settings menu for tailored lesson generation.
 - [ ] **WK-024: Difficulty-Aware Prompting** - Update Gemini prompts to incorporate the user-selected JLPT difficulty level.
 - [ ] **WK-019: Filter Logic Refinement** - Transition from additive (OR) to intersection-based (AND) filtering when multiple focus areas are selected.
