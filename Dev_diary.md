@@ -79,3 +79,17 @@
 ### Retrospective:
 - **CORS/CSP Metadata:** Userscripts require explicit `@connect` permissions for cross-origin requests when using `GM_xmlhttpRequest`.
 - **API Fragility & Auto-Discovery:** Hardcoding model IDs (like `gemini-1.5-flash`) can lead to 404s depending on the specific API token's permissions or regional rollouts. An auto-discovery approach that queries `/v1/models` and tests viability makes the integration significantly more robust.
+
+## 2026-03-06: Sprint 9 Completion (v0.2.15) - Prompt Engineering
+
+### Feature: Grammar Lesson Generation Prompt
+- [x] **WK-021: Prompt Engineering** (Complete)
+    - Designed a strictly structured prompt instructing Gemini to act as a Japanese teacher.
+    - Added rigorous constraints to use *only* user-provided Kanji and Vocabulary.
+    - Mandated JSON output format to ensure seamless parsing for the upcoming UI implementation.
+    - Created `src/prompts.ts` to decouple the prompt logic from the main `App.tsx` component, allowing for easier scaling when implementing JLPT difficulty levels later.
+    - Updated version to `0.2.15`.
+
+### Retrospective:
+- **Decoupling Logic:** Moving large text blocks (like prompts) out of React components significantly improves readability and maintainability.
+- **Strict Typing for LLMs:** Explicitly demanding JSON output without markdown blocks (` ```json `) prevents parsing errors down the line.

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GM_getValue, GM_setValue, GM_xmlhttpRequest, unsafeWindow } from '$';
 import { filterItems } from './logic';
+import { buildGrammarLessonPrompt } from './prompts';
 import './App.css';
 
 declare global {
@@ -184,7 +185,10 @@ function App() {
     }
 
     setStatus(`Generating with ${modelToUse}...`);
-    const prompt = "Confirm you are listening and ready to receive prompts";
+    
+    const sampled = learnedItems.sort(() => 0.5 - Math.random()).slice(0, 50);
+    const itemStrings = sampled.length > 0 ? sampled.map(i => i.data.characters || i.data.slug).join(', ') : "None";
+    const prompt = buildGrammarLessonPrompt(itemStrings);
 
     GM_xmlhttpRequest({
       method: 'POST',

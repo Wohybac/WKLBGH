@@ -20,7 +20,7 @@
 
 ### High Priority
 - [x] **WK-020: Gemini Integration Fix** - Ensure Gemini API integration is functional and receiving simple responses.
-- [ ] **WK-021: Prompt Engineering** - Design and iterate on the prompt for generating personalized lessons based on focused data.
+- [x] **WK-021: Prompt Engineering** - Design and iterate on the prompt for generating personalized lessons based on focused data.
 - [ ] **WK-022: Lesson UI/UX Flow** - Design and implement the user flow for interacting with the generated lessons. (Dependent on WK-021)
 
 ### Medium Priority
