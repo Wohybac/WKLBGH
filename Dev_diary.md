@@ -68,14 +68,14 @@
 ## 2026-03-06: Sprint 8 Completion (v0.2.14) - Gemini API Fix & Testing
 
 ### Bugfix: Gemini API Connection
-- [x] **WK-020: Gemini Integration Fix** (In Progress)
+- [x] **WK-020: Gemini Integration Fix** (Complete)
     - Added `@connect` metadata for `api.wanikani.com` and `generativelanguage.googleapis.com` in `vite.config.ts`.
-    - Switched from `v1beta` to `v1` endpoint for better stability with `gemini-1.5-flash`.
-    - Implemented a simple test prompt: "Confirm you are listening and ready to receive prompts".
-    - Added detailed console logging for Gemini API request/response status and errors.
+    - Switched from `v1beta` to `v1` endpoint for better stability.
+    - Implemented a self-healing auto-discovery mechanism: fetches available models, filters for `generateContent` support, and prioritizes variants of 1.5 Flash.
+    - Added a "ping" test to ensure model viability before use.
+    - Added persistence via `GM_setValue` to save the working model ID and bypass future discovery steps.
     - Synchronized version to `0.2.14` across `package.json`, `vite.config.ts`, and `main.tsx`.
-    - Successfully built project with `npm run build`.
 
 ### Retrospective:
 - **CORS/CSP Metadata:** Userscripts require explicit `@connect` permissions for cross-origin requests when using `GM_xmlhttpRequest`.
-- **Debugging Transparency:** Detailed console logging is essential for diagnosing failures in the userscript sandbox.
+- **API Fragility & Auto-Discovery:** Hardcoding model IDs (like `gemini-1.5-flash`) can lead to 404s depending on the specific API token's permissions or regional rollouts. An auto-discovery approach that queries `/v1/models` and tests viability makes the integration significantly more robust.
