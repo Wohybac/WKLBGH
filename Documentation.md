@@ -37,6 +37,14 @@ The application state is managed within the root `App.tsx` component using React
 - **CSP Compliance:** React is bundled to bypass strict Content Security Policies.
 - **Prompt Optimization:** Samples up to 50 items from the filtered set to keep AI token usage efficient.
 
-## 4. Developer Guide
+## 4. Testing
+- **Framework:** Vitest + JSDOM.
+- **Commands:** `npm run test` to run tests in watch mode; `npm run test -- --run` for a single execution.
+- **Structure:**
+    - `src/tests/setupTests.ts`: Global mocks for Tampermonkey APIs and `wkof`.
+    - `src/logic.ts`: Decoupled business logic (Filtering, Leech detection).
+    - `src/tests/logic.test.ts`: Unit tests for core logic.
+
+## 5. Developer Guide
 - **Build:** `npm run build` generates the `.user.js` in `/dist`.
 - **Version Sync:** Version numbers must be synchronized across `package.json`, `vite.config.ts`, and the console log in `main.tsx`.

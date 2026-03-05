@@ -17,6 +17,7 @@ When performing tasks, assume the persona of the relevant specialist or coordina
 
 ### Quality First
 * Code must be clear, idiomatic, and self-documenting.
+* **Test Coverage:** All new core logic, filtering rules, and UI components MUST be covered by unit or component tests using the established Vitest framework.
 * **Ambiguity Policy:** If a task requirement is unclear, the Analyst must ask the Product Owner for clarification before the Coder starts. Do not guess feature logic.
 
 ### Documentation Management
@@ -39,7 +40,7 @@ Every feature pulled from the Backlog must undergo the following cycle:
 * **Versioning Policy:**
     * `0.0.x`: Small updates, patches, and hotfixes.
     * `0.x.0`: Completion of a full Sprint or major feature set.
-    * `1.0.0`: Completion of the initial project phase and transition to stable.
+    * `x.0.0`: Completion of the initial project phase and transition to stable.
 * **Definition of Ready (DoR):** A feature is "Ready" only if the Product Owner has provided the necessary context, API requirements, and a clear success criterion. If all of these have not been met, the team can refuse the feature and ask for clarifications.
 * **Definition of Done (DoD):** A sprint is only complete when: (1) code is verified by the Tester, (2) `Documentation.md` is updated, (3) `Dev_diary.md` is logged, and (4) `Backlog.md` is updated.
 * **Output Format:** Always use language-labeled code blocks. When updating files, provide clear diffs or complete file overrides as necessary for clarity.

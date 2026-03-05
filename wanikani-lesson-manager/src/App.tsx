@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GM_getValue, GM_setValue, GM_xmlhttpRequest, unsafeWindow } from '$';
+import { filterItems } from './logic';
 import './App.css';
 
 declare global {
@@ -103,23 +104,9 @@ function App() {
       await withTimeout(wkof.ready('ItemData'), 5000, 'Ready Timeout');
       if (focusSettings.length === 0) { setStatus('Select focus area'); return; }
       const items = await withTimeout(wkof.ItemData.get_items({ wk_items: { options: { assignments: true, review_statistics: true }, filters: { item_type: ['kan', 'voc'] } } }), 15000, 'Fetch Timeout');
-      const filtered = items.filter((item: any) => {
-        const ass = item.assignments;
-        if (!ass || ass.srs_stage < 1) return false;
-        if (focusSettings.includes('all')) return true;
-        let keep = false;
-        focusSettings.forEach(s => { if (s.includes('-')) { const [min, max] = s.split('-').map(Number); if (item.data.level >= min && item.data.level <= max) keep = true; } });
-        if (focusSettings.includes('recent') && item.data.level >= (userData?.level - 2)) keep = true;
-        if (focusSettings.includes('leeches')) {
-          const stats = item.review_statistics;
-          if (stats) {
-            const total_incorrect = (stats.meaning_incorrect || 0) + (stats.reading_incorrect || 0);
-            const score = total_incorrect / Math.pow(ass.srs_stage || 1, 1.5);
-            if (score > 1.0 || total_incorrect > 3 || (ass.srs_stage === 9 && total_incorrect > 8)) keep = true;
-          }
-        }
-        return keep;
-      });
+      
+      const filtered = filterItems(items, focusSettings, userData?.level || 1);
+
       const kanjiCount = filtered.filter((i: any) => i.object === 'kanji').length;
       const vocabCount = filtered.filter((i: any) => i.object === 'vocabulary').length;
       setLearnedCount({ kanji: kanjiCount, vocabulary: vocabCount });
@@ -131,20 +118,52 @@ function App() {
   const generateExercise = () => {
     if (!geminiKey) { setShowSettings(true); return; }
     setStatus('Generating...');
-    const sampled = learnedItems.sort(() => 0.5 - Math.random()).slice(0, 50);
-    const itemStrings = sampled.map(i => i.data.characters || i.data.slug).join(', ');
-    const prompt = `I am WaniKani level ${userData?.level}. FOCUS ITEMS: ${itemStrings}. Generate grammar lesson and 3 sentences using these items.`;
+
+    // DEBUG: List available models to see what we CAN use
+    GM_xmlhttpRequest({
+      method: 'GET',
+      url: `https://generativelanguage.googleapis.com/v1/models?key=${geminiKey}`,
+      onload: (res) => {
+        console.log('Available Models:', JSON.parse(res.responseText));
+      }
+    });
+    
+    // For testing: Using a simple prompt as requested
+    const testPrompt = "Confirm you are listening and ready to receive prompts";
+    const prompt = testPrompt;
+
+    console.log('Gemini Request Payload:', { contents: [{ parts: [{ text: prompt }] }] });
+
+    // Trying gemini-1.5-flash-002 which is a specific version
     GM_xmlhttpRequest({
       method: 'POST',
       url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
       headers: { 'Content-Type': 'application/json' },
       data: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
       onload: (response) => {
+        console.log('Gemini Response Status:', response.status);
         if (response.status === 200) {
-          const data = JSON.parse(response.responseText);
-          setExercise(data.candidates[0].content.parts[0].text);
-          setStatus('Generated!');
-        } else { setStatus('API Error'); }
+          try {
+            const data = JSON.parse(response.responseText);
+            if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts[0]) {
+              setExercise(data.candidates[0].content.parts[0].text);
+              setStatus('Generated!');
+            } else {
+              console.error('Unexpected Gemini Response Format:', data);
+              setStatus('Format Error');
+            }
+          } catch (e) {
+            console.error('JSON Parse Error:', e);
+            setStatus('JSON Error');
+          }
+        } else {
+          console.error('Gemini API Error details:', response.responseText);
+          setStatus(`API Error (${response.status})`);
+        }
+      },
+      onerror: (err) => {
+        console.error('GM_xmlhttpRequest Error:', err);
+        setStatus('Network Error');
       }
     });
   };

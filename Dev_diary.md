@@ -50,3 +50,32 @@
 ### Retrospective:
 - **Injection Resilience:** MutationObserver is essential for WaniKani's modern dashboard, as elements load at different times.
 - **Native Alignment:** Using native classes like `.dashboard__row` is safer than raw positioning for long-term stability.
+
+## 2026-03-03: Sprint 7 Completion (v0.2.14) - Robustness & Testing
+
+### Sprint 7: Testing Suite
+- [x] **WK-011: Testing Suite** (Complete)
+    - Integrated **Vitest** + **JSDOM** + **React Testing Library**.
+    - Refactored core logic into `logic.ts` for modularity and testability.
+    - Implemented unit tests for item filtering, SRS leech calculations, and level spread logic.
+    - Mocked Tampermonkey APIs and WKOF to enable CI-ready testing.
+    - Verified 7/7 tests passing.
+
+### Retrospective:
+- **Testability through Refactoring:** Decoupling logic from React components (`App.tsx`) significantly simplified testing and improved code readability.
+- **Mocking Strategy:** Mocking `unsafeWindow` and `GM_` functions is critical for userscript development to avoid environment-specific crashes during testing.
+
+## 2026-03-06: Sprint 8 Completion (v0.2.14) - Gemini API Fix & Testing
+
+### Bugfix: Gemini API Connection
+- [x] **WK-020: Gemini Integration Fix** (In Progress)
+    - Added `@connect` metadata for `api.wanikani.com` and `generativelanguage.googleapis.com` in `vite.config.ts`.
+    - Switched from `v1beta` to `v1` endpoint for better stability with `gemini-1.5-flash`.
+    - Implemented a simple test prompt: "Confirm you are listening and ready to receive prompts".
+    - Added detailed console logging for Gemini API request/response status and errors.
+    - Synchronized version to `0.2.14` across `package.json`, `vite.config.ts`, and `main.tsx`.
+    - Successfully built project with `npm run build`.
+
+### Retrospective:
+- **CORS/CSP Metadata:** Userscripts require explicit `@connect` permissions for cross-origin requests when using `GM_xmlhttpRequest`.
+- **Debugging Transparency:** Detailed console logging is essential for diagnosing failures in the userscript sandbox.
