@@ -18,7 +18,7 @@ CRITICAL CONSTRAINTS:
    - You may use basic standard hiragana for grammatical particles (は, が, を, に, で, etc.), copulas (だ, です), and standard conjugations.
    - DO NOT introduce any nouns, verbs, or adjectives that are not present in the ALLOWED ITEMS list.
 2. GRAMMAR FOCUS: The blank space (___) in each sentence MUST represent a missing grammatical structure or particle, NOT a missing vocabulary word.
-3. MULTIPLE CHOICE: Provide exactly 4 options for each sentence. Exactly ONE option must be correct.
+3. MULTIPLE CHOICE: Provide exactly 4 options for each sentence. Exactly ONE option must be correct. Ensure there is absolutely no ambiguity. The three incorrect options MUST be definitively wrong in the given context. Do not use options that could be considered correct under different interpretations.
 4. EXPLANATIONS: Every single option (both correct and incorrect) MUST include a concise explanation IN ENGLISH of why it is right or wrong, referencing the grammar rule.${jlptConstraint}
 
 ALLOWED ITEMS (Kanji & Vocabulary):
@@ -84,14 +84,14 @@ export const buildShortStoryPrompt = (learnedItemsString: string, jlptLevels: st
 
   return `You are an expert Japanese language teacher creating a reading comprehension exercise for a student.
 
-Your task is to write a natural, plausible short story in Japanese (approximately 10 sentences long) and generate exactly 5 multiple-choice reading comprehension questions based on the story.
+Your task is to write a cohesive, engaging short story in Japanese (up to 15 sentences long) and generate exactly 5 multiple-choice reading comprehension questions based on the story.
 
 CRITICAL CONSTRAINTS:
 1. VOCABULARY & GRAMMAR LIMITATION: You MUST construct the Japanese story and the questions using ONLY the Kanji and Vocabulary provided in the "ALLOWED ITEMS" list below. 
    - For grammar, you may use ${grammarAllowance}.
    - DO NOT introduce any nouns, verbs, or adjectives that are not present in the ALLOWED ITEMS list.${grammarRestriction}
-2. NATURAL LANGUAGE: The story must make logical sense and depict a plausible real-world scenario. Avoid nonsensical sentences just to fit the vocabulary.
-3. MULTIPLE CHOICE: Provide exactly 4 options for each question (A, B, C, D). Exactly ONE option must be correct.
+2. NARRATIVE FLOW & NATURAL LANGUAGE: The story must be a cohesive piece of text with a clear beginning, middle, and end. It should be engaging and make logical sense as a complete narrative. DO NOT just string together vaguely connected random sentences. Avoid nonsensical sentences just to fit the vocabulary.
+3. MULTIPLE CHOICE: Provide exactly 4 options for each question (A, B, C, D). Exactly ONE option must be correct. Ensure there is absolutely no ambiguity. The three incorrect options MUST be definitively wrong based on the story. Do not use options that could be considered correct under different interpretations.
 4. EXPLANATIONS: Every single option (both correct and incorrect) MUST include a concise explanation IN ENGLISH of why it is right or wrong based on the events in the story.
 5. ENGLISH TRANSLATION: Provide a full English translation of the story.
 

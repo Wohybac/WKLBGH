@@ -183,3 +183,14 @@
 
 ### Retrospective:
 - **Learning Reinforcement:** Transitioning from static numbers to an interactive review significantly increases the educational value of the widget, transforming it from a simple testing tool into a comprehensive learning aid.
+
+## 2026-03-07: Sprint 17 Completion (v1.1.0) - Prompt Quality Assurance
+
+### Bugfix: Ambiguous Options & Disconnected Narratives
+- [x] **WK-028: Prompt Safeguards & Narrative Flow** (Complete)
+    - Updated `buildGrammarLessonPrompt` to explicitly forbid options that could be considered correct under different interpretations.
+    - Updated `buildShortStoryPrompt` to increase the sentence limit to "up to 15 sentences" and enforce a strict narrative structure (beginning, middle, end) to prevent disconnected sentences.
+    - Bumped project version to `1.1.0`.
+
+### Retrospective:
+- **Prompt Guardrails:** Generative models often produce technically correct but practically flawed output if constraints are too loose. Adding explicit negative constraints (e.g., "Do not use options that could be considered correct under different interpretations") significantly improves the reliability of generated educational content.

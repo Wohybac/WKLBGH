@@ -10,7 +10,7 @@ declare global {
   }
 }
 
-console.log('[WKLBGH v1.0.0] Virtual Widget Injector starting...');
+console.log('[WKLBGH v1.1.0] Virtual Widget Injector starting...');
 
 const getWkof = () => (unsafeWindow as any).wkof || window.wkof;
 
