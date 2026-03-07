@@ -1,4 +1,4 @@
-# WKLBGH (WaniKani Lesson Based Grammar Helper)
+# Wanikani_Ushi (WaniKani Lesson Based Grammar Helper)
 
 **Current Version:** v0.2.13  
 **Status:** Stable (Sprint 6 Complete)
