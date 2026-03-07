@@ -127,3 +127,18 @@
 ### Retrospective:
 - **Prompt Engineering constraints:** Telling the LLM *what not to do* (exclusion of unselected levels) is equally as important as telling it what to focus on when managing difficulty boundaries.
 
+
+## 2026-03-07: Sprint 13 Completion (v0.4.0) - Global User Statistics
+
+### Feature: Global User Statistics
+- [x] **WK-026: Global User Statistics** (Complete)
+    - Created a new `GlobalStats` interface to track correct, incorrect, and skipped answers.
+    - Integrated data persistence tying statistics specifically to the user's WaniKani API key via `GM_setValue('wklbgh_stats_${apiKey}')`, preventing cross-account data leakage.
+    - Created a new "Ushi Statistics" view to display the aggregated data.
+    - Tracked and displayed the `first_lesson_date` and `last_lesson_date`.
+    - Added a "Global Stats" (📊) button to the main widget header.
+    - Created UI integration tests using React Testing Library to verify state toggling.
+
+### Retrospective:
+- **State Encapsulation:** Decoupling the view states (`showSettings`, `showStats`, and `appState`) ensures that the main widget flow remains undisturbed while allowing modular features to easily overlay the dashboard.
+

@@ -19,17 +19,17 @@
 - [x] **WK-021: Prompt Engineering** - Design and iterate on the prompt for generating personalized lessons based on focused data.
 - [x] **WK-022: Lesson UI/UX Flow** - Design and implement the user flow for interacting with the generated lessons.
 - [x] **WK-013: UI Refinement & Rebranding** - Beautify the panel into a native WaniKani-looking widget with WKU (Ushi) rebranding (v0.2.17).
+- [x] **WK-023: JLPT Difficulty Settings** - Add JLPT level options (N5-N1) to the settings menu for tailored lesson generation.
+- [x] **WK-024: Difficulty-Aware Prompting** - Update Gemini prompts to incorporate the user-selected JLPT difficulty level.
+- [x] **WK-015: Settings Menu Restructuring** - (REMOVED) Organize settings into sub-menus or tabs for better UX.
+- [x] **WK-026: Global User Statistics** - Track and store cumulative lesson stats (correct, incorrect, skipped) across all sessions (v0.4.0).
 
 ## To-Do Tasks (Ordered by Priority)
 
 ### High Priority
 
 ### Medium Priority
-- [ ] **WK-026: Global User Statistics** - Track and store cumulative lesson stats (correct, incorrect, skipped) across all sessions. Stats should be tied to the specific WaniKani API key so data persists across key changes.
-- [ ] **WK-023: JLPT Difficulty Settings** - Add JLPT level options (N5-N1) to the settings menu for tailored lesson generation.
-- [ ] **WK-024: Difficulty-Aware Prompting** - Update Gemini prompts to incorporate the user-selected JLPT difficulty level.
 - [ ] **WK-019: Filter Logic Refinement** - Transition from additive (OR) to intersection-based (AND) filtering when multiple focus areas are selected.
-- [ ] **WK-015: Settings Menu Restructuring** - Organize settings into sub-menus or tabs for better UX.
 
 ### Low Priority
 - [ ] **WK-025: Short Story Generation** - Add an option to generate a short story using familiar vocabulary instead of a standard grammar lesson.

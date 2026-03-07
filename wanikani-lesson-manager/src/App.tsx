@@ -12,6 +12,14 @@ declare global {
 
 type AppState = 'idle' | 'generating' | 'ready' | 'active' | 'results';
 
+interface GlobalStats {
+  correct: number;
+  wrong: number;
+  skipped: number;
+  first_lesson_date: string | null;
+  last_lesson_date: string | null;
+}
+
 const CowSVG = ({ chewing = false }: { chewing?: boolean }) => (
   <svg viewBox="0 0 120 90" width="120" height="90" xmlns="http://www.w3.org/2000/svg">
     <ellipse cx="25" cy="35" rx="12" ry="6" transform="rotate(-30 25 35)" fill="#fff" stroke="#333" strokeWidth="4"/>
@@ -41,6 +49,7 @@ function App() {
   const [jlptSettings, setJlptSettings] = useState<string[]>(GM_getValue('wklbgh_jlpt_settings', []));
   const [placement, setPlacement] = useState(GM_getValue('wklbgh_placement', 'below_level_progress'));
   const [showSettings, setShowSettings] = useState(!apiKey);
+  const [showStats, setShowStats] = useState(false);
   const [status, setStatus] = useState('Idle');
   const [userData, setUserData] = useState<any>(null);
   const [learnedCount, setLearnedCount] = useState({ kanji: 0, vocabulary: 0 });
@@ -48,6 +57,13 @@ function App() {
   const [activeModel, setActiveModel] = useState(GM_getValue('wklbgh_active_model', ''));
   const [exercise, setExercise] = useState('');
   const [isDismissed, setIsDismissed] = useState(false);
+
+  // Global Stats
+  const getStatsKey = () => `wklbgh_stats_${apiKey}`;
+  const [globalStats, setGlobalStats] = useState<GlobalStats>(
+    apiKey ? GM_getValue(`wklbgh_stats_${apiKey}`, { correct: 0, wrong: 0, skipped: 0, first_lesson_date: null, last_lesson_date: null }) 
+           : { correct: 0, wrong: 0, skipped: 0, first_lesson_date: null, last_lesson_date: null }
+  );
 
   // Lesson State
   const [appState, setAppState] = useState<AppState>('idle');
@@ -297,7 +313,36 @@ function App() {
   const handleNext = () => {
     if (lessonData && currentQuestionIndex < lessonData.questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
-    } else {
+    } else if (lessonData) {
+      let correct = 0;
+      let wrong = 0;
+      let skipped = 0;
+
+      lessonData.questions.forEach((q, idx) => {
+        const answeredId = selectedAnswers[idx];
+        if (!answeredId) {
+          skipped++;
+        } else {
+          const selectedOption = q.options.find(o => o.id === answeredId);
+          if (selectedOption?.is_correct) correct++;
+          else wrong++;
+        }
+      });
+
+      const now = new Date().toISOString();
+      const updatedStats = {
+        correct: globalStats.correct + correct,
+        wrong: globalStats.wrong + wrong,
+        skipped: globalStats.skipped + skipped,
+        first_lesson_date: globalStats.first_lesson_date || now,
+        last_lesson_date: now
+      };
+
+      setGlobalStats(updatedStats);
+      if (apiKey) {
+        GM_setValue(`wklbgh_stats_${apiKey}`, updatedStats);
+      }
+
       setAppState('results');
     }
   };
@@ -422,7 +467,43 @@ function App() {
   return (
     <div className="wklbgh-panel">
       
-      {showSettings ? (
+      {showStats ? (
+        <div className="wklbgh-widget-layout">
+          <div className="wklbgh-widget-icon" style={{ alignSelf: 'flex-start', marginTop: '10px' }}>
+            <CowSVG />
+          </div>
+          <div className="wklbgh-widget-content">
+            <div className="wklbgh-widget-header">
+              <h2 className="wklbgh-widget-title">Ushi Statistics</h2>
+              <div className="wklbgh-widget-controls">
+                  <button className="wklbgh-btn-icon" onClick={() => setShowStats(false)}>✖</button>
+              </div>
+            </div>
+            <div className="wklbgh-settings-panel">
+               <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '20px' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '32px', color: '#28a745', fontWeight: 'bold' }}>{globalStats.correct}</div>
+                    <div style={{ fontSize: '14px', color: '#666' }}>Correct</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '32px', color: '#dc3545', fontWeight: 'bold' }}>{globalStats.wrong}</div>
+                    <div style={{ fontSize: '14px', color: '#666' }}>Incorrect</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '32px', color: '#6c757d', fontWeight: 'bold' }}>{globalStats.skipped}</div>
+                    <div style={{ fontSize: '14px', color: '#666' }}>Skipped</div>
+                  </div>
+               </div>
+               <div style={{ fontSize: '14px', color: '#555', marginBottom: '10px' }}>
+                 <strong>First Lesson:</strong> {globalStats.first_lesson_date ? new Date(globalStats.first_lesson_date).toLocaleString() : 'N/A'}
+               </div>
+               <div style={{ fontSize: '14px', color: '#555' }}>
+                 <strong>Last Lesson:</strong> {globalStats.last_lesson_date ? new Date(globalStats.last_lesson_date).toLocaleString() : 'N/A'}
+               </div>
+            </div>
+          </div>
+        </div>
+      ) : showSettings ? (
         <div className="wklbgh-widget-layout">
           <div className="wklbgh-widget-icon" style={{ alignSelf: 'flex-start', marginTop: '10px' }}>
             <CowSVG chewing={true} />
@@ -483,6 +564,7 @@ function App() {
                 WaniKani Ushi {appState !== 'active' && appState !== 'results' && learnedCount.kanji > 0 && <span className="wklbgh-widget-pill">{learnedCount.kanji + learnedCount.vocabulary}</span>}
               </h2>
               <div className="wklbgh-widget-controls">
+                  <button className="wklbgh-btn-icon" onClick={() => setShowStats(true)} title="Global Stats">📊</button>
                   <button className="wklbgh-btn-icon" onClick={() => setShowSettings(true)} title="Settings">⚙️</button>
                   <button className="wklbgh-btn-icon" onClick={() => setIsDismissed(true)} title="Dismiss">✖</button>
               </div>
