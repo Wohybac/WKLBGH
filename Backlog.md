@@ -23,13 +23,13 @@
 - [x] **WK-024: Difficulty-Aware Prompting** - Update Gemini prompts to incorporate the user-selected JLPT difficulty level.
 - [x] **WK-015: Settings Menu Restructuring** - (REMOVED) Organize settings into sub-menus or tabs for better UX.
 - [x] **WK-026: Global User Statistics** - Track and store cumulative lesson stats (correct, incorrect, skipped) across all sessions (v0.4.0).
+- [x] **WK-019: Filter Logic Refinement** - Transitioned Leeches from additive (OR) to an intersection-based (AND) modifier for multiple focus areas (v0.4.1).
 
 ## To-Do Tasks (Ordered by Priority)
 
 ### High Priority
 
 ### Medium Priority
-- [ ] **WK-019: Filter Logic Refinement** - Transition from additive (OR) to intersection-based (AND) filtering when multiple focus areas are selected.
 
 ### Low Priority
 - [ ] **WK-025: Short Story Generation** - Add an option to generate a short story using familiar vocabulary instead of a standard grammar lesson.

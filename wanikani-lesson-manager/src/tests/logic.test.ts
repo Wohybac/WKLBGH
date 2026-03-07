@@ -44,10 +44,21 @@ describe('Logic Utilities', () => {
       expect(filtered.map(i => i.id)).toContain(3);
     });
 
-    it('should filter by leeches', () => {
-      const filtered = filterItems(mockItems, ['leeches'], 20);
+    it('should filter by leeches only (with ALL scope)', () => {
+      const filtered = filterItems(mockItems, ['all'], 20, true);
       expect(filtered).toHaveLength(1);
       expect(filtered[0].id).toBe(2);
+    });
+
+    it('should intersect leeches with specific scope', () => {
+      const filtered = filterItems(mockItems, ['11-20'], 20, true);
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].id).toBe(2);
+    });
+
+    it('should return empty if intersection yields nothing', () => {
+      const filtered = filterItems(mockItems, ['1-10'], 20, true); // No leeches in 1-10 in mock
+      expect(filtered).toHaveLength(0);
     });
 
     it('should filter by recent levels', () => {

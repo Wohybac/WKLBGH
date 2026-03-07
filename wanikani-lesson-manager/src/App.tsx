@@ -46,6 +46,7 @@ function App() {
   const [apiKey, setApiKey] = useState(GM_getValue('wk_api_key', ''));
   const [geminiKey, setGeminiKey] = useState(GM_getValue('gemini_api_key', ''));
   const [focusSettings, setFocusSettings] = useState<string[]>(GM_getValue('wklbgh_focus_settings', ['all']));
+  const [leechesOnly, setLeechesOnly] = useState<boolean>(GM_getValue('wklbgh_leeches_only', false));
   const [jlptSettings, setJlptSettings] = useState<string[]>(GM_getValue('wklbgh_jlpt_settings', []));
   const [placement, setPlacement] = useState(GM_getValue('wklbgh_placement', 'below_level_progress'));
   const [showSettings, setShowSettings] = useState(!apiKey);
@@ -142,6 +143,7 @@ function App() {
     GM_setValue('wk_api_key', apiKey);
     GM_setValue('gemini_api_key', geminiKey);
     GM_setValue('wklbgh_focus_settings', focusSettings);
+    GM_setValue('wklbgh_leeches_only', leechesOnly);
     GM_setValue('wklbgh_jlpt_settings', jlptSettings);
     GM_setValue('wklbgh_placement', placement);
     GM_setValue('wklbgh_active_model', ''); // Reset on key change
@@ -220,7 +222,7 @@ function App() {
       if (focusSettings.length === 0) { setStatus('Select focus area'); return; }
       const items = await withTimeout(wkof.ItemData.get_items({ wk_items: { options: { assignments: true, review_statistics: true }, filters: { item_type: ['kan', 'voc'] } } }), 15000, 'Fetch Timeout');
       
-      const filtered = filterItems(items, focusSettings, userData?.level || 1);
+      const filtered = filterItems(items, focusSettings, userData?.level || 1, leechesOnly);
 
       const kanjiCount = filtered.filter((i: any) => i.object === 'kanji').length;
       const vocabCount = filtered.filter((i: any) => i.object === 'vocabulary').length;
@@ -529,12 +531,28 @@ function App() {
               </select>
             </div>
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '10px' }}>Focus Area:</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-                <FocusButton id="all" label="All" /><FocusButton id="recent" label="Recent" /><FocusButton id="leeches" label="Leeches" />
+              <label style={{ display: 'block', marginBottom: '10px' }}>Focus Area (Scope):</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <FocusButton id="all" label="All" /><FocusButton id="recent" label="Recent" />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
                 {levelSpreads.map(s => <FocusButton key={s} id={s} label={s} disabled={isLevelDisabled(s)} />)}
+              </div>
+              <div style={{ padding: '15px', backgroundColor: '#f9f9f9', border: '1px solid #ddd', borderRadius: '6px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={leechesOnly} 
+                    onChange={(e) => setLeechesOnly(e.target.checked)} 
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                  Restrict to Leeches Only
+                </label>
+                {leechesOnly && (
+                  <p style={{ marginTop: '10px', fontSize: '12px', color: '#666', lineHeight: '1.4' }}>
+                    Leeches affect your other selections by selecting only leeches from it. If you want to practice all kanji and vocab from your selection, deselect leeches.
+                  </p>
+                )}
               </div>
             </div>
             <div style={{ marginBottom: '20px' }}>

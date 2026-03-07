@@ -142,3 +142,17 @@
 ### Retrospective:
 - **State Encapsulation:** Decoupling the view states (`showSettings`, `showStats`, and `appState`) ensures that the main widget flow remains undisturbed while allowing modular features to easily overlay the dashboard.
 
+
+## 2026-03-07: Sprint 14 Completion (v0.4.1) - Filter Logic Refinement
+
+### Feature: Intersection Filtering for Leeches
+- [x] **WK-019: Filter Logic Refinement** (Complete)
+    - Extracted 'Leeches' from the general Scope Array (`wklbgh_focus_settings`).
+    - Created a standalone boolean modifier `wklbgh_leeches_only`.
+    - Updated `filterItems` in `logic.ts` to use an AND intersection: first items are gathered based on OR rules (All, 1-10, Recent), and THEN if `leechesOnly` is true, the result is further filtered down to only include leeches.
+    - Added clear helper text in the UI explaining that this setting restricts other active selections.
+    - Added specific unit tests to verify the intersection behavior.
+
+### Retrospective:
+- **UX Design over purely Logical Code:** While we initially designed filtering to be purely logical (additive OR vs intersection AND), shifting the *UI* to represent Leeches as a boolean modifier decoupled from scope completely resolved a major UX trap.
+

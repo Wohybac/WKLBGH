@@ -42,44 +42,37 @@ export const isLeech = (item: WaniKaniItem): boolean => {
 export const filterItems = (
   items: WaniKaniItem[],
   focusSettings: string[],
-  userLevel: number
+  userLevel: number,
+  leechesOnly: boolean = false
 ): WaniKaniItem[] => {
   if (focusSettings.length === 0) return [];
-  if (focusSettings.includes('all')) {
-    return items.filter(item => item.assignments && item.assignments.srs_stage >= 1);
-  }
+  
+  let filtered = items.filter(item => item.assignments && item.assignments.srs_stage >= 1);
 
-  return items.filter((item: WaniKaniItem) => {
-    const ass = item.assignments;
-    if (!ass || ass.srs_stage < 1) return false;
-
-    let keep = false;
-
-    for (const setting of focusSettings) {
-      // Level Range (e.g., "1-10")
-      if (setting.includes('-')) {
-        const [min, max] = setting.split('-').map(Number);
-        if (item.data.level >= min && item.data.level <= max) {
-          keep = true;
-          break;
+  if (!focusSettings.includes('all')) {
+    filtered = filtered.filter((item: WaniKaniItem) => {
+      for (const setting of focusSettings) {
+        // Level Range (e.g., "1-10")
+        if (setting.includes('-')) {
+          const [min, max] = setting.split('-').map(Number);
+          if (item.data.level >= min && item.data.level <= max) {
+            return true;
+          }
+        }
+        // Recent items
+        if (setting === 'recent' && item.data.level >= userLevel - 2) {
+          return true;
         }
       }
+      return false;
+    });
+  }
 
-      // Recent items
-      if (setting === 'recent' && item.data.level >= userLevel - 2) {
-        keep = true;
-        break;
-      }
+  if (leechesOnly) {
+    filtered = filtered.filter(isLeech);
+  }
 
-      // Leeches
-      if (setting === 'leeches' && isLeech(item)) {
-        keep = true;
-        break;
-      }
-    }
-
-    return keep;
-  });
+  return filtered;
 };
 
 export interface Option {
