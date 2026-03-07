@@ -1,20 +1,20 @@
-# Technical Documentation - WKLBGH
+# Technical Documentation - WKU (WaniKani Ushi)
 
 ## 1. Project Overview
-**WKLBGH (WaniKani Lesson Based Grammar Helper)** is a Greasyfork userscript designed to provide personalized Japanese grammar exercises. It uses the student's WaniKani progress (Kanji and Vocabulary) to feed the Gemini 1.5 Flash API, ensuring that all generated exercises use only familiar vocabulary.
+**WKU (WaniKani Ushi)** is a Greasyfork userscript designed to provide personalized Japanese grammar exercises. It uses the student's WaniKani progress (Kanji and Vocabulary) to feed the Gemini 1.5 Flash API, ensuring that all generated exercises use only familiar vocabulary.
 
 ## 2. Technical Stack
 - **Framework:** React 19 (Bundled for CSP compliance).
 - **Build Tool:** Vite + `vite-plugin-monkey`.
 - **Data Source:** WaniKani API v2 via **WaniKani Open Framework (WKOF)**.
 - **AI Engine:** Google Gemini 1.5 Flash.
-- **Styling:** Vanilla CSS + Native WaniKani classes.
+- **Styling:** Vanilla CSS, heavily namespaced (`.wklbgh-`) to prevent leaking.
 
 ## 3. Architecture & Features
 
 ### 3.1 Injection Strategy (Virtual Widget)
-To ensure compatibility with WaniKani's modular dashboard (introduced Oct 2025), WKLBGH uses a **MutationObserver** to detect the presence of the dashboard container (`.dashboard__content`).
-- **Native Alignment:** The widget is wrapped in standard WaniKani classes (`.dashboard__row`, `.dashboard__widget`) to maintain layout integrity.
+To ensure compatibility with WaniKani's modular dashboard (introduced Oct 2025), WKU uses a **MutationObserver** to detect the presence of the dashboard container (`.dashboard__content`).
+- **Native Alignment:** The widget mirrors native layout structures but uses completely isolated CSS classes (e.g., `.wklbgh-widget-layout`) to prevent overriding WaniKani's own dashboard elements.
 - **Dynamic Placement:** Users can select their preferred injection point via settings:
     - **Top:** Injected at the start of the dashboard.
     - **Below Level Progress:** Injected after the level progress widget (Primary target).

@@ -9,10 +9,10 @@ export default defineConfig({
     monkey({
       entry: 'src/main.tsx',
       userscript: {
-        name: 'WKLBGH',
+        name: 'WKU',
         icon: 'https://www.wanikani.com/favicon.ico',
         namespace: 'npm/vite-plugin-monkey',
-        version: '0.2.16', // Lesson UI/UX Flow update
+        version: '0.2.17', // UI Refinement update
         match: [
           'https://www.wanikani.com/*',
         ],
@@ -20,7 +20,7 @@ export default defineConfig({
           'api.wanikani.com',
           'generativelanguage.googleapis.com',
         ],
-        description: 'WKLBGH - WaniKani Lesson Based Grammar Helper: Manage your lessons with Gemini AI assistance.',
+        description: 'WKU - WaniKani Ushi: Manage your lessons with Gemini AI assistance.',
         'run-at': 'document-start',
         grant: ['GM_setValue', 'GM_getValue', 'GM_xmlhttpRequest', 'GM_addStyle', 'unsafeWindow'],
         // REMOVED WKOF @require to avoid conflicts with user-installed version

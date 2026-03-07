@@ -12,6 +12,28 @@ declare global {
 
 type AppState = 'idle' | 'generating' | 'ready' | 'active' | 'results';
 
+const CowSVG = ({ chewing = false }: { chewing?: boolean }) => (
+  <svg viewBox="0 0 120 90" width="120" height="90" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="25" cy="35" rx="12" ry="6" transform="rotate(-30 25 35)" fill="#fff" stroke="#333" strokeWidth="4"/>
+    <ellipse cx="95" cy="35" rx="12" ry="6" transform="rotate(30 95 35)" fill="#fff" stroke="#333" strokeWidth="4"/>
+    <path d="M 35 30 Q 30 10 45 20" fill="#f0f0f0" stroke="#333" strokeWidth="4" strokeLinecap="round"/>
+    <path d="M 85 30 Q 90 10 75 20" fill="#f0f0f0" stroke="#333" strokeWidth="4" strokeLinecap="round"/>
+    <rect x="25" y="25" width="70" height="60" rx="30" fill="#ffffff" stroke="#333" strokeWidth="4"/>
+    <path d="M 60 25 Q 85 25 90 40 Q 85 60 65 50 Q 55 35 60 25 Z" fill="#333"/>
+    <ellipse cx="60" cy="70" rx="28" ry="16" fill="#ffb6c1" stroke="#333" strokeWidth="4"/>
+    <ellipse cx="50" cy="68" rx="3" ry="5" fill="#333"/>
+    <ellipse cx="70" cy="68" rx="3" ry="5" fill="#333"/>
+    <circle cx="45" cy="48" r="4" fill="#333"/>
+    <circle cx="75" cy="48" r="4" fill="#fff"/>
+    {chewing && (
+      <g>
+        <path d="M 60 78 Q 50 95 30 90" fill="none" stroke="#28a745" strokeWidth="5" strokeLinecap="round"/>
+        <path d="M 45 86 Q 35 85 30 75" fill="none" stroke="#28a745" strokeWidth="4" strokeLinecap="round"/>
+      </g>
+    )}
+  </svg>
+);
+
 function App() {
   const [apiKey, setApiKey] = useState(GM_getValue('wk_api_key', ''));
   const [geminiKey, setGeminiKey] = useState(GM_getValue('gemini_api_key', ''));
@@ -239,12 +261,9 @@ function App() {
   const FocusButton = ({ id, label, disabled = false }: any) => {
     const isSelected = focusSettings.includes(id);
     return (
-      <button onClick={() => !disabled && toggleFocus(id)} disabled={disabled} style={{
-        padding: '10px', borderRadius: '6px', border: '1px solid #ddd',
-        backgroundColor: isSelected ? '#007bff' : (disabled ? '#f0f0f0' : '#fff'),
-        color: isSelected ? '#fff' : (disabled ? '#aaa' : '#333'),
-        cursor: disabled ? 'not-allowed' : 'pointer', fontWeight: 'bold', opacity: disabled ? 0.6 : 1
-      }}>{label}</button>
+      <button onClick={() => !disabled && toggleFocus(id)} disabled={disabled} className={`wklbgh-focus-button ${isSelected ? 'selected' : ''}`}>
+        {label}
+      </button>
     );
   };
 
@@ -276,18 +295,18 @@ function App() {
     const isAnswered = !!answeredOptionId;
 
     return (
-      <div style={{ marginTop: '20px' }}>
-        <h2 style={{ fontSize: '18px', color: '#555', marginBottom: '15px' }}>Question {currentQuestionIndex + 1} of {lessonData.questions.length}</h2>
-        <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>{currentQuestion.sentence_with_blank}</div>
+      <div className="wklbgh-lesson-container">
+        <h2 className="wklbgh-lesson-progress">Question {currentQuestionIndex + 1} of {lessonData.questions.length}</h2>
+        <div className="wklbgh-lesson-sentence">{currentQuestion.sentence_with_blank}</div>
         
         {isAnswered && (
-          <div style={{ fontSize: '14px', color: '#666', marginBottom: '20px', fontStyle: 'italic' }}>
+          <div className="wklbgh-lesson-translation">
             {currentQuestion.english_translation}
           </div>
         )}
         {!isAnswered && <div style={{ marginBottom: '20px' }}></div>}
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+        <div className="wklbgh-lesson-options">
           {currentQuestion.options.map(option => {
             let bgColor = '#f8f9fa';
             let borderColor = '#ddd';
@@ -306,18 +325,17 @@ function App() {
                 key={option.id}
                 onClick={() => handleOptionClick(option.id)}
                 disabled={isAnswered}
+                className="wklbgh-lesson-option"
                 style={{
-                  padding: '15px', borderRadius: '8px', border: `2px solid ${borderColor}`,
-                  backgroundColor: bgColor, color: textColor,
-                  textAlign: 'left', fontSize: '16px', cursor: isAnswered ? 'default' : 'pointer',
-                  transition: 'all 0.2s ease'
+                  borderColor, backgroundColor: bgColor, color: textColor,
+                  cursor: isAnswered ? 'default' : 'pointer'
                 }}
               >
                 <div style={{ fontWeight: 'bold', marginBottom: isAnswered && (option.is_correct || option.id === answeredOptionId) ? '8px' : '0' }}>
                   {option.id}. {option.text}
                 </div>
                 {isAnswered && (option.is_correct || option.id === answeredOptionId) && (
-                  <div style={{ fontSize: '14px', marginTop: '5px', padding: '10px', backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: '4px' }}>
+                  <div className="wklbgh-lesson-explanation">
                     {option.explanation}
                   </div>
                 )}
@@ -326,11 +344,9 @@ function App() {
           })}
         </div>
 
-        <button 
-          onClick={handleNext}
-          style={{ width: '100%', padding: '15px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '16px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          {currentQuestionIndex < lessonData.questions.length - 1 ? 'Next Question' : 'Results'}
+        <button onClick={handleNext} className="wklbgh-button wklbgh-button--primary" style={{ marginTop: '10px' }}>
+          <span>{currentQuestionIndex < lessonData.questions.length - 1 ? 'Next Question' : 'Results'}</span>
+          <span className="wklbgh-button-icon">›</span>
         </button>
       </div>
     );
@@ -355,97 +371,137 @@ function App() {
     });
 
     return (
-      <div style={{ marginTop: '20px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '24px', color: '#333', marginBottom: '20px' }}>Lesson Complete!</h2>
+      <div className="wklbgh-results-container">
+        <h2 className="wklbgh-results-title">Lesson Complete!</h2>
         
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginBottom: '30px' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', color: '#28a745' }}>✅ {correct}</div>
-            <div style={{ fontSize: '14px', color: '#666' }}>Correct</div>
+        <div className="wklbgh-results-stats">
+          <div className="wklbgh-result-stat">
+            <div className="wklbgh-stat-value" style={{ color: '#28a745' }}>{correct}</div>
+            <div className="wklbgh-stat-label">Correct</div>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', color: '#dc3545' }}>❌ {incorrect}</div>
-            <div style={{ fontSize: '14px', color: '#666' }}>Incorrect</div>
+          <div className="wklbgh-result-stat">
+            <div className="wklbgh-stat-value" style={{ color: '#dc3545' }}>{incorrect}</div>
+            <div className="wklbgh-stat-label">Incorrect</div>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', color: '#6c757d' }}>⚪ {skipped}</div>
-            <div style={{ fontSize: '14px', color: '#666' }}>Skipped</div>
+          <div className="wklbgh-result-stat">
+            <div className="wklbgh-stat-value" style={{ color: '#6c757d' }}>{skipped}</div>
+            <div className="wklbgh-stat-label">Skipped</div>
           </div>
         </div>
 
-        <button 
-          onClick={resetLesson}
-          style={{ width: '100%', padding: '15px', backgroundColor: '#6c757d', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '16px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          Return to Menu
+        <button onClick={resetLesson} className="wklbgh-button wklbgh-button--primary">
+          <span>Return to Menu</span>
+          <span className="wklbgh-button-icon">›</span>
         </button>
       </div>
     );
   };
 
   return (
-    <div className="wklbgh-panel" style={{ border: '4px solid #007bff', padding: '25px', backgroundColor: '#fff', color: '#333', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', fontFamily: 'sans-serif', width: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 style={{ margin: 0, fontSize: '22px', color: '#007bff', fontWeight: 'bold' }}>WKLBGH</h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px' }}>⚙️</button>
-            <button onClick={() => setIsDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', color: '#ccc' }}>✖</button>
-        </div>
-      </div>
-
+    <div className="wklbgh-panel">
+      
       {showSettings ? (
-        <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-            <div><label style={{ display: 'block', fontSize: '13px' }}>WaniKani Key:</label><input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} style={{ width: '100%', padding: '10px' }} /></div>
-            <div><label style={{ display: 'block', fontSize: '13px' }}>Gemini Key:</label><input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} style={{ width: '100%', padding: '10px' }} /></div>
+        <div className="wklbgh-widget-layout">
+          <div className="wklbgh-widget-icon" style={{ alignSelf: 'flex-start', marginTop: '10px' }}>
+            <CowSVG chewing={true} />
           </div>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold' }}>Widget Placement:</label>
-            <select value={placement} onChange={(e) => setPlacement(e.target.value)} style={{ width: '100%', padding: '10px' }}>
-                <option value="top">Top of Dashboard</option>
-                <option value="below_level_progress">Below Level Progress</option>
-                <option value="bottom">Bottom of Dashboard</option>
-            </select>
-          </div>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold' }}>Focus Area:</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-              <FocusButton id="all" label="All" /><FocusButton id="recent" label="Recent" /><FocusButton id="leeches" label="Leeches" />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              {levelSpreads.map(s => <FocusButton key={s} id={s} label={s} disabled={isLevelDisabled(s)} />)}
+          <div className="wklbgh-widget-content">
+            <div className="wklbgh-widget-header">
+              <h2 className="wklbgh-widget-title">Ushi Settings</h2>
+            <div className="wklbgh-widget-controls">
+                <button className="wklbgh-btn-icon" onClick={() => setShowSettings(false)}>✖</button>
             </div>
           </div>
-          <button onClick={saveSettings} style={{ padding: '12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', width: '100%' }}>Save & Reload</button>
+          <div className="wklbgh-settings-panel">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+              <div><label style={{ display: 'block', fontSize: '13px', marginBottom: '5px' }}>WaniKani Key:</label><input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} style={{ width: '100%', padding: '10px' }} /></div>
+              <div><label style={{ display: 'block', fontSize: '13px', marginBottom: '5px' }}>Gemini Key:</label><input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} style={{ width: '100%', padding: '10px' }} /></div>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '10px' }}>Widget Placement:</label>
+              <select value={placement} onChange={(e) => setPlacement(e.target.value)} style={{ width: '100%', padding: '10px' }}>
+                  <option value="top">Top of Dashboard</option>
+                  <option value="below_level_progress">Below Level Progress</option>
+                  <option value="bottom">Bottom of Dashboard</option>
+              </select>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '10px' }}>Focus Area:</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <FocusButton id="all" label="All" /><FocusButton id="recent" label="Recent" /><FocusButton id="leeches" label="Leeches" />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                {levelSpreads.map(s => <FocusButton key={s} id={s} label={s} disabled={isLevelDisabled(s)} />)}
+              </div>
+            </div>
+            <button className="wklbgh-button wklbgh-button--primary" onClick={saveSettings}>
+              <span>Save & Reload</span>
+              <span className="wklbgh-button-icon">›</span>
+            </button>
+          </div>
+        </div>
         </div>
       ) : (
-        <div>
-          <div style={{ backgroundColor: '#f8f9fa', padding: '12px', borderRadius: '6px', marginBottom: '20px', borderLeft: '5px solid #007bff' }}>
-            <strong>Status:</strong> {status}
-          </div>
-          
+        <div className="wklbgh-widget-layout">
           {appState === 'idle' && (
-            <div style={{ display: 'flex', gap: '15px' }}>
-              <button onClick={scanLearnedItems} style={{ flex: 1, padding: '12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Scan Progress</button>
-              <button onClick={generateExercise} disabled={learnedCount.kanji === 0} style={{ flex: 1, padding: '12px', backgroundColor: learnedCount.kanji > 0 ? '#28a745' : '#ccc', color: '#fff', border: 'none', borderRadius: '6px', cursor: learnedCount.kanji > 0 ? 'pointer' : 'not-allowed' }}>Generate Lesson</button>
+            <div className="wklbgh-widget-icon">
+              <CowSVG />
             </div>
           )}
 
-          {appState === 'generating' && (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-              Generating your personalized lesson... Please wait.
+          <div className="wklbgh-widget-content">
+            <div className="wklbgh-widget-header">
+              <h2 className="wklbgh-widget-title">
+                WaniKani Ushi {appState !== 'active' && appState !== 'results' && learnedCount.kanji > 0 && <span className="wklbgh-widget-pill">{learnedCount.kanji + learnedCount.vocabulary}</span>}
+              </h2>
+              <div className="wklbgh-widget-controls">
+                  <button className="wklbgh-btn-icon" onClick={() => setShowSettings(true)} title="Settings">⚙️</button>
+                  <button className="wklbgh-btn-icon" onClick={() => setIsDismissed(true)} title="Dismiss">✖</button>
+              </div>
             </div>
-          )}
+            
+            {appState === 'idle' && (
+              <p className="wklbgh-widget-subtitle">
+                {status === 'Idle' ? 'Do your Grammar Lessons to unlock new knowledge.' : status}
+              </p>
+            )}
 
-          {appState === 'ready' && (
-            <button onClick={() => setAppState('active')} style={{ width: '100%', padding: '15px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '18px', cursor: 'pointer', fontWeight: 'bold' }}>
-              Start Lesson!
-            </button>
-          )}
+            {appState === 'generating' && (
+              <p className="wklbgh-widget-subtitle">Generating your personalized lesson... Please wait.</p>
+            )}
 
-          {appState === 'active' && renderActiveLesson()}
-          {appState === 'results' && renderResults()}
+            {appState === 'ready' && (
+              <p className="wklbgh-widget-subtitle">Lesson Ready! Let's get started.</p>
+            )}
 
+            <div className="wklbgh-widget-actions">
+              {appState === 'idle' && learnedCount.kanji === 0 && (
+                <button className="wklbgh-button" onClick={scanLearnedItems}>
+                  <span>Scan Progress</span>
+                  <span className="wklbgh-button-icon">›</span>
+                </button>
+              )}
+              {appState === 'idle' && learnedCount.kanji > 0 && (
+                <button className="wklbgh-button" onClick={generateExercise}>
+                  <span>Generate Lesson</span>
+                  <span className="wklbgh-button-icon">›</span>
+                </button>
+              )}
+              {appState === 'generating' && (
+                <button className="wklbgh-button wklbgh-button--disabled" disabled>
+                  <span>Generating...</span>
+                </button>
+              )}
+              {appState === 'ready' && (
+                <button className="wklbgh-button wklbgh-button--primary" onClick={() => setAppState('active')}>
+                  <span>Start Lesson!</span>
+                  <span className="wklbgh-button-icon">›</span>
+                </button>
+              )}
+              {appState === 'active' && renderActiveLesson()}
+              {appState === 'results' && renderResults()}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,11 +1,12 @@
-# Wanikani_Ushi (WaniKani Lesson Based Grammar Helper)
+# WKU (WaniKani Ushi)
 
-**Current Version:** v0.2.13  
-**Status:** Stable (Sprint 6 Complete)
+**Current Version:** v0.2.17  
+**Status:** Stable (Sprint 11 Complete)
 
-A Greasyfork userscript that generates personalized Japanese grammar exercises using WaniKani progress data and Gemini 1.5 AI.
+A Greasyfork userscript that generates personalized Japanese grammar exercises using WaniKani progress data and Gemini 1.5 AI. 
 
 ## Key Features
+- **Native WaniKani Aesthetic:** Seamlessly integrates into the dashboard using a heavily namespaced virtual widget.
 - **WKOF Integration:** High-performance caching of user progress.
 - **Advanced Focus Selection:** Target specific level spreads, recent items, or leeches.
 - **Virtual Widget System:** Custom placement on the modular WaniKani dashboard.

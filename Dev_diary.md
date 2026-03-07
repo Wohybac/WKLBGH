@@ -94,3 +94,21 @@
 ### Retrospective:
 - **Test-Driven Architecture:** The requirement to test the JSON parser forced us to decouple it from the React component, resulting in cleaner, more modular code.
 - **State Management:** Using a single string literal type (`AppState`) is much safer and easier to track than multiple boolean flags (`isGenerating`, `isReady`, etc.) when managing distinct UI views.
+
+## 2026-03-07: Sprint 11 Completion (v0.2.17) - UI Refinement & Rebranding
+
+### Feature: Native WaniKani Widget Styling & WKU Rebranding
+- [x] **WK-013: UI Refinement** (Complete)
+    - Completely restructured the React UI in `App.tsx` and `App.css` to match the native WaniKani dashboard widget aesthetics.
+    - Implemented a standard flex layout with an icon column and content column.
+    - Designed 3D-style action buttons using a unified WaniKani grey color palette, removing the generic blue styling.
+    - Addressed global CSS leakage by rigidly namespacing all component classes, ensuring no interference with native dashboard widgets.
+    - Added bottom-margin spacing to integrate naturally into the page's widget flow.
+- [x] **Rebranding: WaniKani Ushi (WKU)**
+    - Rebranded the project from "WKLBGH" to "WaniKani Ushi" (WKU).
+    - Designed and implemented a custom `CowSVG` component matching the bold-outline WaniKani illustration style.
+    - Added stateful variants to the mascot (e.g., chewing grass in the settings menu).
+
+### Retrospective:
+- **CSS Isolation:** When injecting into a complex, pre-existing environment like WaniKani, it is critical to aggressively namespace all CSS classes. Using generic names like `.wk-button` caused immediate layout collisions.
+

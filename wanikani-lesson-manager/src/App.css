@@ -1,8 +1,288 @@
+/* File: /home/jardik_pop/Documents/LLM_Playground/Japanese/wanikani-lesson-manager/src/App.css */
 .wklbgh-panel * {
   box-sizing: border-box;
 }
 
 .wklbgh-panel {
-  /* Ensure it doesn't inherit WaniKani's flex behavior if injected into a flex container */
   flex: none !important;
+  background-color: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #d5d5d5;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #333333;
+}
+
+.wklbgh-widget-layout {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.wklbgh-widget-icon {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 120px;
+}
+
+.wklbgh-widget-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.wklbgh-widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.wklbgh-widget-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: bold;
+  color: #333333;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wklbgh-widget-pill {
+  font-size: 14px;
+  font-weight: bold;
+  color: #555;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  padding: 2px 10px;
+  background-color: #f4f4f4;
+}
+
+.wklbgh-widget-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.wklbgh-btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #888;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.wklbgh-btn-icon:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.wklbgh-widget-subtitle {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  color: #707070;
+}
+
+.wklbgh-widget-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wklbgh-button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background-color: #f4f4f4;
+  border: 1px solid #d5d5d5;
+  border-bottom: 3px solid #b0b0b0;
+  border-radius: 5px;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333333;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.wklbgh-button:hover:not(:disabled) {
+  background-color: #ebebeb;
+}
+
+.wklbgh-button:active:not(:disabled) {
+  border-bottom-width: 1px;
+  transform: translateY(2px);
+  margin-bottom: 2px;
+}
+
+.wklbgh-button--disabled {
+  background-color: #f9f9f9;
+  color: #aaa;
+  border-bottom-width: 1px;
+  cursor: not-allowed;
+  transform: translateY(2px);
+  margin-bottom: 2px;
+}
+
+.wklbgh-button--primary {
+  background-color: #e2e2e2;
+  color: #333333;
+  border-color: #d5d5d5;
+  border-bottom-color: #b0b0b0;
+}
+
+.wklbgh-button--primary:hover:not(:disabled) {
+  background-color: #d4d4d4;
+}
+
+.wklbgh-button-icon {
+  font-size: 18px;
+  font-weight: bold;
+  color: #888;
+}
+
+.wklbgh-button--primary .wklbgh-button-icon {
+  color: #888;
+}
+
+/* Focus Buttons */
+.wklbgh-focus-button {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  color: #333;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.wklbgh-focus-button:hover:not(:disabled) {
+  background-color: #ebebeb;
+}
+
+.wklbgh-focus-button.selected {
+  background-color: #666;
+  color: #fff;
+  border-color: #555;
+}
+
+.wklbgh-focus-button.selected:hover:not(:disabled) {
+  background-color: #555;
+}
+
+.wklbgh-focus-button:disabled {
+  background-color: #f0f0f0;
+  color: #aaa;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Settings Panel */
+.wklbgh-settings-panel {
+  padding: 15px;
+  background-color: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+/* Active Lesson */
+.wklbgh-lesson-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.wklbgh-lesson-progress {
+  font-size: 14px;
+  color: #888;
+  margin: 0;
+  font-weight: normal;
+}
+
+.wklbgh-lesson-sentence {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.wklbgh-lesson-translation {
+  font-size: 14px;
+  color: #666;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+.wklbgh-lesson-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wklbgh-lesson-option {
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 2px solid #ddd;
+  text-align: left;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.wklbgh-lesson-option:hover:not(:disabled) {
+  border-color: #bbb;
+  background-color: #f0f0f0;
+}
+
+.wklbgh-lesson-explanation {
+  font-size: 14px;
+  margin-top: 8px;
+  padding: 8px;
+  background-color: rgba(255,255,255,0.6);
+  border-radius: 4px;
+}
+
+/* Results */
+.wklbgh-results-container {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.wklbgh-results-title {
+  font-size: 24px;
+  color: #333;
+  margin: 0 0 20px 0;
+}
+
+.wklbgh-results-stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 24px;
+}
+
+.wklbgh-result-stat {
+  text-align: center;
+}
+
+.wklbgh-stat-value {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.wklbgh-stat-label {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
 }
