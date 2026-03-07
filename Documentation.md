@@ -23,15 +23,20 @@ To ensure compatibility with WaniKani's modular dashboard (introduced Oct 2025),
 ### 3.2 State & Data Management
 The application state is managed within the root `App.tsx` component using React `useState`. 
 - **API Keys:** Stored in the browser's userscript storage (`GM_setValue`).
+- **Global Stats:** Persistent tracking of correct, incorrect, and skipped answers, along with lesson timestamps, tied directly to the user's API key (`wklbgh_stats_${apiKey}`).
 - **Active Gemini Model:** Persisted model identifier resulting from the auto-discovery process (`wklbgh_active_model`).
-- **Focus Settings:** Persisted array of selected filters (e.g., `['1-10', 'recent']`).
+- **Focus Settings:** Persisted array of selected scopes (e.g., `['1-10', 'recent']`).
+- **Leeches Modifier:** Persisted boolean (`wklbgh_leeches_only`) that acts as an intersection filter on the main focus settings.
+- **JLPT Settings:** Persisted array of selected JLPT levels for generation constraints (`wklbgh_jlpt_settings`).
 - **Placement Settings:** Persisted preference for where the widget appears.
 - **Learned Items:** Fetched via WKOF, filtered by SRS stage (1-9) and user selection.
 
 ### 3.3 Data Filtering Logic
-1.  **Level Spreads:** Filters items by user-selected ranges (e.g., 1-10, 11-20). 
-2.  **Most Recent:** Dynamically filters items from levels `[user_level, user_level-1, user_level-2]`.
-3.  **Leeches:** Identifies items using the formula: `incorrect_answers / (srs_stage ^ 1.5)`. Includes burned items with high historical failure rates.
+1.  **Scope Selection (OR Logic):** Gathers items matching any selected scope:
+    - **Level Spreads:** Filters items by user-selected ranges (e.g., 1-10, 11-20). 
+    - **Most Recent:** Dynamically filters items from levels `[user_level, user_level-1, user_level-2]`.
+    - **All:** Bypasses scope restrictions.
+2.  **Leech Modifier (AND Logic):** If the "Restrict to Leeches Only" setting is true, the gathered scope is intersected to only include items matching the leech formula: `incorrect_answers / (srs_stage ^ 1.5)`. Includes burned items with high historical failure rates.
 
 ### 3.4 Gemini Auto-Discovery & Interaction
 To ensure broad compatibility with varying API keys and model availability, the application employs a self-healing auto-discovery mechanism:
