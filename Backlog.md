@@ -24,6 +24,7 @@
 - [x] **WK-015: Settings Menu Restructuring** - (REMOVED) Organize settings into sub-menus or tabs for better UX.
 - [x] **WK-026: Global User Statistics** - Track and store cumulative lesson stats (correct, incorrect, skipped) across all sessions (v0.4.0).
 - [x] **WK-019: Filter Logic Refinement** - Transitioned Leeches from additive (OR) to an intersection-based (AND) modifier for multiple focus areas (v0.4.1).
+- [x] **WK-028: Prompt Safeguards & Narrative Flow** - Added strict prompt instructions against multiple correct options and updated short story prompt to require a cohesive narrative (v1.1.0).
 
 ## To-Do Tasks (Ordered by Priority)
 
