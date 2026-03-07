@@ -112,3 +112,18 @@
 ### Retrospective:
 - **CSS Isolation:** When injecting into a complex, pre-existing environment like WaniKani, it is critical to aggressively namespace all CSS classes. Using generic names like `.wk-button` caused immediate layout collisions.
 
+
+## 2026-03-07: Sprint 12 Completion (v0.3.0) - JLPT Difficulty Selectors
+
+### Feature: Difficulty-Aware Generation
+- [x] **WK-023: JLPT Difficulty Settings** (Complete)
+    - Added UI in the Settings menu for selecting targeted JLPT levels (N5-N1).
+    - Enabled multiple selections by toggling individual difficulty levels.
+    - Stored preferences persistently using `GM_setValue('wklbgh_jlpt_settings')`.
+- [x] **WK-024: Difficulty-Aware Prompting** (Complete)
+    - Updated `buildGrammarLessonPrompt` in `prompts.ts` to conditionally accept `jlptSettings`.
+    - Implemented prompt logic to explicitly instruct Gemini to only include selected JLPT levels, and expressly *exclude* deselected levels, to heavily constrain the generation.
+
+### Retrospective:
+- **Prompt Engineering constraints:** Telling the LLM *what not to do* (exclusion of unselected levels) is equally as important as telling it what to focus on when managing difficulty boundaries.
+

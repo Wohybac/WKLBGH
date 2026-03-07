@@ -38,6 +38,7 @@ function App() {
   const [apiKey, setApiKey] = useState(GM_getValue('wk_api_key', ''));
   const [geminiKey, setGeminiKey] = useState(GM_getValue('gemini_api_key', ''));
   const [focusSettings, setFocusSettings] = useState<string[]>(GM_getValue('wklbgh_focus_settings', ['all']));
+  const [jlptSettings, setJlptSettings] = useState<string[]>(GM_getValue('wklbgh_jlpt_settings', []));
   const [placement, setPlacement] = useState(GM_getValue('wklbgh_placement', 'below_level_progress'));
   const [showSettings, setShowSettings] = useState(!apiKey);
   const [status, setStatus] = useState('Idle');
@@ -55,6 +56,7 @@ function App() {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
 
   const levelSpreads = ['1-10', '11-20', '21-30', '31-40', '41-50', '51-60'];
+  const jlptLevels = ['N5', 'N4', 'N3', 'N2', 'N1'];
 
   useEffect(() => {
     if (apiKey) verifyApiKey(apiKey);
@@ -124,6 +126,7 @@ function App() {
     GM_setValue('wk_api_key', apiKey);
     GM_setValue('gemini_api_key', geminiKey);
     GM_setValue('wklbgh_focus_settings', focusSettings);
+    GM_setValue('wklbgh_jlpt_settings', jlptSettings);
     GM_setValue('wklbgh_placement', placement);
     GM_setValue('wklbgh_active_model', ''); // Reset on key change
     setActiveModel('');
@@ -149,6 +152,16 @@ function App() {
       }
     }
     setFocusSettings(newSettings);
+  };
+
+  const toggleJlpt = (level: string) => {
+    let newSettings = [...jlptSettings];
+    if (newSettings.includes(level)) {
+      newSettings = newSettings.filter(s => s !== level);
+    } else {
+      newSettings.push(level);
+    }
+    setJlptSettings(newSettings);
   };
 
   const isLevelDisabled = (spread: string) => {
@@ -222,7 +235,7 @@ function App() {
     
     const sampled = learnedItems.sort(() => 0.5 - Math.random()).slice(0, 50);
     const itemStrings = sampled.length > 0 ? sampled.map(i => i.data.characters || i.data.slug).join(', ') : "None";
-    const prompt = buildGrammarLessonPrompt(itemStrings);
+    const prompt = buildGrammarLessonPrompt(itemStrings, jlptSettings);
 
     GM_xmlhttpRequest({
       method: 'POST',
@@ -263,6 +276,15 @@ function App() {
     return (
       <button onClick={() => !disabled && toggleFocus(id)} disabled={disabled} className={`wklbgh-focus-button ${isSelected ? 'selected' : ''}`}>
         {label}
+      </button>
+    );
+  };
+
+  const JlptButton = ({ level }: any) => {
+    const isSelected = jlptSettings.includes(level);
+    return (
+      <button onClick={() => toggleJlpt(level)} className={`wklbgh-focus-button ${isSelected ? 'selected' : ''}`}>
+        {level}
       </button>
     );
   };
@@ -432,6 +454,12 @@ function App() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 {levelSpreads.map(s => <FocusButton key={s} id={s} label={s} disabled={isLevelDisabled(s)} />)}
+              </div>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '10px' }}>Grammar Difficulty (JLPT):</label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {jlptLevels.map(level => <JlptButton key={level} level={level} />)}
               </div>
             </div>
             <button className="wklbgh-button wklbgh-button--primary" onClick={saveSettings}>

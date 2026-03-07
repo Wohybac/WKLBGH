@@ -1,4 +1,14 @@
-export const buildGrammarLessonPrompt = (learnedItemsString: string): string => {
+export const buildGrammarLessonPrompt = (learnedItemsString: string, jlptLevels: string[] = []): string => {
+  let jlptConstraint = '';
+  if (jlptLevels.length > 0) {
+    const levelsStr = jlptLevels.join(', ');
+    const unselected = ['N5', 'N4', 'N3', 'N2', 'N1'].filter(l => !jlptLevels.includes(l)).join(' and ');
+    jlptConstraint = `\n5. DIFFICULTY LEVEL: Only generate exercises for JLPT levels ${levelsStr}.`;
+    if (unselected.length > 0) {
+       jlptConstraint += ` The generated lessons MUST NOT contain any exercise including ${unselected} grammatical structures.`;
+    }
+  }
+
   return `You are an expert Japanese language teacher creating a highly tailored grammar test for a student. 
 
 Your task is to generate exactly 10 multiple-choice questions focusing on Japanese grammatical structures (e.g., verb conjugations, particles, conditionals, te-form, transitivity).
@@ -9,7 +19,7 @@ CRITICAL CONSTRAINTS:
    - DO NOT introduce any nouns, verbs, or adjectives that are not present in the ALLOWED ITEMS list.
 2. GRAMMAR FOCUS: The blank space (___) in each sentence MUST represent a missing grammatical structure or particle, NOT a missing vocabulary word.
 3. MULTIPLE CHOICE: Provide exactly 4 options for each sentence. Exactly ONE option must be correct.
-4. EXPLANATIONS: Every single option (both correct and incorrect) MUST include a concise explanation of why it is right or wrong, referencing the grammar rule.
+4. EXPLANATIONS: Every single option (both correct and incorrect) MUST include a concise explanation of why it is right or wrong, referencing the grammar rule.${jlptConstraint}
 
 ALLOWED ITEMS (Kanji & Vocabulary):
 ${learnedItemsString}
