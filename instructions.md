@@ -15,6 +15,11 @@ When performing tasks, assume the persona of the relevant specialist or coordina
 
 ## 2. Project Guidelines & Workflow
 
+### Git Workflow (CRITICAL)
+* **Direct pushes to `main` are strictly forbidden.**
+* For every new feature, bug fix, or sprint task, you MUST create a new branch (e.g., `feature/WK-025-short-story`, `bugfix/wkof-scan`).
+* Upon completing the task, you MUST submit a Pull Request (PR) for review before merging into `main`.
+
 ### Quality First
 * Code must be clear, idiomatic, and self-documenting.
 * **Test Coverage:** All new core logic, filtering rules, and UI components MUST be covered by unit or component tests using the established Vitest framework.
