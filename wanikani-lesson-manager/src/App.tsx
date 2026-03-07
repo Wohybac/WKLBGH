@@ -71,6 +71,7 @@ function App() {
   const [lessonData, setLessonData] = useState<Lesson | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
+  const [expandedQuestions, setExpandedQuestions] = useState<Record<number, boolean>>({});
 
   const levelSpreads = ['1-10', '11-20', '21-30', '31-40', '41-50', '51-60'];
   const jlptLevels = ['N5', 'N4', 'N3', 'N2', 'N1'];
@@ -356,6 +357,7 @@ function App() {
     setLessonData(null);
     setCurrentQuestionIndex(0);
     setSelectedAnswers({});
+    setExpandedQuestions({});
     setAppState('idle');
     setStatus(`Scan Complete: ${learnedCount.kanji} Kanji, ${learnedCount.vocabulary} Vocab found.`);
   };
@@ -452,6 +454,10 @@ function App() {
       }
     });
 
+    const toggleExpand = (idx: number) => {
+      setExpandedQuestions(prev => ({ ...prev, [idx]: !prev[idx] }));
+    };
+
     return (
       <div className="wklbgh-results-container">
         <h2 className="wklbgh-results-title">Lesson Complete!</h2>
@@ -471,7 +477,99 @@ function App() {
           </div>
         </div>
 
-        <button onClick={resetLesson} className="wklbgh-button wklbgh-button--primary">
+        <div className="wklbgh-lesson-review" style={{ marginTop: '20px', borderTop: '2px solid #eee', paddingTop: '20px', textAlign: 'left' }}>
+          <h3 style={{ marginBottom: '15px', color: '#333', fontSize: '16px' }}>Review Lesson</h3>
+          
+          {lessonData.story_text && (
+            <div className="wklbgh-story-container" style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f9f9f9', borderRadius: '8px', border: '1px solid #eee' }}>
+              <p style={{ lineHeight: '1.6', fontSize: '15px', margin: 0, whiteSpace: 'pre-wrap' }}>{lessonData.story_text}</p>
+              {lessonData.story_translation && (
+                 <p style={{ lineHeight: '1.6', fontSize: '14px', margin: '15px 0 0 0', paddingTop: '10px', borderTop: '1px dashed #ddd', color: '#666' }}>{lessonData.story_translation}</p>
+              )}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {lessonData.questions.map((q, idx) => {
+              const answeredId = selectedAnswers[idx];
+              const isCorrect = answeredId ? q.options.find(o => o.id === answeredId)?.is_correct : false;
+              const isSkipped = !answeredId;
+              const isExpanded = expandedQuestions[idx];
+
+              let headerBgColor = '#e2e3e5';
+              let headerTextColor = '#383d41';
+              let headerBorderColor = '#d6d8db';
+
+              if (!isSkipped) {
+                if (isCorrect) {
+                  headerBgColor = '#d4edda';
+                  headerTextColor = '#155724';
+                  headerBorderColor = '#c3e6cb';
+                } else {
+                  headerBgColor = '#f8d7da';
+                  headerTextColor = '#721c24';
+                  headerBorderColor = '#f5c6cb';
+                }
+              }
+
+              const correctOption = q.options.find(o => o.is_correct);
+              const selectedOption = answeredId ? q.options.find(o => o.id === answeredId) : null;
+
+              return (
+                <div key={q.id} style={{ border: `1px solid ${headerBorderColor}`, borderRadius: '6px', overflow: 'hidden' }}>
+                  <button 
+                    onClick={() => toggleExpand(idx)}
+                    style={{
+                      width: '100%', padding: '12px 15px', border: 'none', backgroundColor: headerBgColor, color: headerTextColor,
+                      textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      fontSize: '14px', fontWeight: 'bold'
+                    }}
+                  >
+                    <span style={{ flex: 1, paddingRight: '10px' }}>{idx + 1}. {q.sentence_with_blank || q.question_text}</span>
+                    <span style={{ fontSize: '12px' }}>{isExpanded ? '▼' : '▶'}</span>
+                  </button>
+                  
+                  {isExpanded && (
+                    <div style={{ padding: '15px', backgroundColor: '#fff', fontSize: '14px', lineHeight: '1.5' }}>
+                      {q.english_translation && (
+                         <div style={{ marginBottom: '15px', color: '#555', fontStyle: 'italic' }}>"{q.english_translation}"</div>
+                      )}
+                      
+                      {selectedOption && (
+                        <div style={{ marginBottom: (!isCorrect && correctOption) ? '15px' : '0', padding: '10px', backgroundColor: isCorrect ? '#d4edda' : '#f8d7da', borderRadius: '4px', border: `1px solid ${isCorrect ? '#c3e6cb' : '#f5c6cb'}` }}>
+                          <div style={{ fontWeight: 'bold', color: isCorrect ? '#155724' : '#721c24', marginBottom: '5px' }}>
+                            Your Answer: {selectedOption.text}
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#333' }}>{selectedOption.explanation}</div>
+                        </div>
+                      )}
+
+                      {!isCorrect && correctOption && (
+                        <div style={{ padding: '10px', backgroundColor: '#d4edda', borderRadius: '4px', border: '1px solid #c3e6cb' }}>
+                          <div style={{ fontWeight: 'bold', color: '#155724', marginBottom: '5px' }}>
+                            Correct Answer: {correctOption.text}
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#333' }}>{correctOption.explanation}</div>
+                        </div>
+                      )}
+
+                      {isSkipped && correctOption && (
+                        <div style={{ padding: '10px', backgroundColor: '#e2e3e5', borderRadius: '4px', border: '1px solid #d6d8db' }}>
+                          <div style={{ fontWeight: 'bold', color: '#383d41', marginBottom: '5px' }}>
+                            Correct Answer: {correctOption.text}
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#333' }}>{correctOption.explanation}</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <button onClick={resetLesson} className="wklbgh-button wklbgh-button--primary" style={{ marginTop: '20px' }}>
           <span>Return to Menu</span>
           <span className="wklbgh-button-icon">›</span>
         </button>

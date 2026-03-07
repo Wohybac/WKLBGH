@@ -170,3 +170,16 @@
 ### Retrospective:
 - **Prompt Isolation vs Unification:** When applying logic to generative prompts (like JLPT boundaries), separating vocabulary and grammatical allowances into different logical lists within the prompt creates contradictions for the LLM. Merging the boundaries into a single rule (`VOCABULARY & GRAMMAR LIMITATION`) provides better constraints.
 - **Progressive Disclosure UX:** Exposing the English translation of a reading comprehension text at the beginning trivializes the task. Hiding the translation until the last question creates a more challenging and rewarding experience.
+
+## 2026-03-07: Sprint 16 Completion (v1.0.0) - Interactive Lesson Review
+
+### Feature: Interactive Lesson Review
+- [x] **WK-027: Interactive Lesson Review** (Complete)
+    - Implemented a post-lesson review accordion in the results screen.
+    - Added color-coded buttons (Green/Correct, Red/Incorrect, Grey/Skipped) for each question to quickly convey performance.
+    - Engineered state management (`expandedQuestions`) to allow multiple questions to be toggled open simultaneously.
+    - Displayed the user's selected answer, the correct answer, and their respective explanations within the expanded view.
+    - Included the short story text directly within the review section for full context during reading comprehension reviews.
+
+### Retrospective:
+- **Learning Reinforcement:** Transitioning from static numbers to an interactive review significantly increases the educational value of the widget, transforming it from a simple testing tool into a comprehensive learning aid.

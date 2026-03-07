@@ -12,7 +12,7 @@ export default defineConfig({
         name: 'WKU',
         icon: 'https://www.wanikani.com/favicon.ico',
         namespace: 'npm/vite-plugin-monkey',
-        version: '0.5.0', // Short Story Generation
+        version: '1.0.0', // Interactive Review & v1 Release
         match: [
           'https://www.wanikani.com/*',
         ],
