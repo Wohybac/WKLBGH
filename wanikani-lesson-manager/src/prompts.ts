@@ -19,7 +19,7 @@ CRITICAL CONSTRAINTS:
    - DO NOT introduce any nouns, verbs, or adjectives that are not present in the ALLOWED ITEMS list.
 2. GRAMMAR FOCUS: The blank space (___) in each sentence MUST represent a missing grammatical structure or particle, NOT a missing vocabulary word.
 3. MULTIPLE CHOICE: Provide exactly 4 options for each sentence. Exactly ONE option must be correct.
-4. EXPLANATIONS: Every single option (both correct and incorrect) MUST include a concise explanation of why it is right or wrong, referencing the grammar rule.${jlptConstraint}
+4. EXPLANATIONS: Every single option (both correct and incorrect) MUST include a concise explanation IN ENGLISH of why it is right or wrong, referencing the grammar rule.${jlptConstraint}
 
 ALLOWED ITEMS (Kanji & Vocabulary):
 ${learnedItemsString}
@@ -59,6 +59,81 @@ You must return the response EXCLUSIVELY as a valid JSON object matching the exa
           "text": "読まない",
           "is_correct": false,
           "explanation": "Incorrect. This is the negative present form ('will not read'), which does not fit the past tense context."
+        }
+      ]
+    }
+  ]
+}`;
+};
+
+export const buildShortStoryPrompt = (learnedItemsString: string, jlptLevels: string[] = []): string => {
+  let grammarAllowance = 'basic standard hiragana for grammatical particles (は, が, を, に, で, etc.), copulas (だ, です), and standard conjugations';
+  let grammarRestriction = '';
+
+  if (jlptLevels.length > 0) {
+    const allLevels = ['N1', 'N2', 'N3', 'N4', 'N5'];
+    const highestSelectedLevel = allLevels.find(level => jlptLevels.includes(level)) || 'N5';
+    const forbiddenLevels = allLevels.slice(0, allLevels.indexOf(highestSelectedLevel));
+    
+    grammarAllowance = `grammatical structures, particles, and conjugations up to and including the ${highestSelectedLevel} level (i.e., ${allLevels.slice(allLevels.indexOf(highestSelectedLevel)).join(', ')})`;
+    
+    if (forbiddenLevels.length > 0) {
+       grammarRestriction = `\n   - CRITICAL: You MUST NOT use any grammatical structures from higher levels: ${forbiddenLevels.join(', ')}.`;
+    }
+  }
+
+  return `You are an expert Japanese language teacher creating a reading comprehension exercise for a student.
+
+Your task is to write a natural, plausible short story in Japanese (approximately 10 sentences long) and generate exactly 5 multiple-choice reading comprehension questions based on the story.
+
+CRITICAL CONSTRAINTS:
+1. VOCABULARY & GRAMMAR LIMITATION: You MUST construct the Japanese story and the questions using ONLY the Kanji and Vocabulary provided in the "ALLOWED ITEMS" list below. 
+   - For grammar, you may use ${grammarAllowance}.
+   - DO NOT introduce any nouns, verbs, or adjectives that are not present in the ALLOWED ITEMS list.${grammarRestriction}
+2. NATURAL LANGUAGE: The story must make logical sense and depict a plausible real-world scenario. Avoid nonsensical sentences just to fit the vocabulary.
+3. MULTIPLE CHOICE: Provide exactly 4 options for each question (A, B, C, D). Exactly ONE option must be correct.
+4. EXPLANATIONS: Every single option (both correct and incorrect) MUST include a concise explanation IN ENGLISH of why it is right or wrong based on the events in the story.
+5. ENGLISH TRANSLATION: Provide a full English translation of the story.
+
+ALLOWED ITEMS (Kanji & Vocabulary):
+${learnedItemsString}
+
+OUTPUT FORMAT:
+You must return the response EXCLUSIVELY as a valid JSON object matching the exact structure below. Do not include any markdown formatting (like \`\`\`json), introduction, or conclusion text. Just the raw JSON object.
+
+{
+  "lesson_title": "Reading Comprehension: [Insert Story Title]",
+  "story_text": "[Insert the full Japanese story here]",
+  "story_translation": "[Insert the full English translation of the story here]",
+  "questions": [
+    {
+      "id": 1,
+      "question_text": "[Insert the Japanese question here]",
+      "english_translation": "[Insert the English translation of the question here]",
+      "options": [
+        {
+          "id": "A",
+          "text": "[Option A text]",
+          "is_correct": false,
+          "explanation": "[Explanation for Option A]"
+        },
+        {
+          "id": "B",
+          "text": "[Option B text]",
+          "is_correct": true,
+          "explanation": "[Explanation for Option B]"
+        },
+        {
+          "id": "C",
+          "text": "[Option C text]",
+          "is_correct": false,
+          "explanation": "[Explanation for Option C]"
+        },
+        {
+          "id": "D",
+          "text": "[Option D text]",
+          "is_correct": false,
+          "explanation": "[Explanation for Option D]"
         }
       ]
     }

@@ -84,14 +84,17 @@ export interface Option {
 
 export interface Question {
   id: number;
-  sentence_with_blank: string;
-  english_translation: string;
-  tested_grammar_point: string;
+  question_text?: string;
+  sentence_with_blank?: string;
+  english_translation?: string;
+  tested_grammar_point?: string;
   options: Option[];
 }
 
 export interface Lesson {
   lesson_title: string;
+  story_text?: string;
+  story_translation?: string;
   questions: Question[];
 }
 
