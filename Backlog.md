@@ -28,6 +28,7 @@
 ## To-Do Tasks (Ordered by Priority)
 
 ### High Priority
+- [x] **WK-027: Interactive Lesson Review** - Add an expandable review section to the results screen, showing individual questions, the user's answer, the correct answer, and their respective explanations.
 
 ### Medium Priority
 

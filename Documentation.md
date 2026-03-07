@@ -24,6 +24,7 @@ To ensure compatibility with WaniKani's modular dashboard (introduced Oct 2025),
 The application state is managed within the root `App.tsx` component using React `useState`. 
 - **API Keys:** Stored in the browser's userscript storage (`GM_setValue`).
 - **Global Stats:** Persistent tracking of correct, incorrect, and skipped answers, along with lesson timestamps, tied directly to the user's API key (`wklbgh_stats_${apiKey}`).
+- **Interactive Review:** Maintains an accordion state (`expandedQuestions`) mapped to question IDs in the results view to dynamically expose explanations.
 - **Active Gemini Model:** Persisted model identifier resulting from the auto-discovery process (`wklbgh_active_model`).
 - **Focus Settings:** Persisted array of selected scopes (e.g., `['1-10', 'recent']`).
 - **Leeches Modifier:** Persisted boolean (`wklbgh_leeches_only`) that acts as an intersection filter on the main focus settings.
