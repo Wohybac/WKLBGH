@@ -1,7 +1,7 @@
 # Technical Documentation - WKU (WaniKani Ushi)
 
 ## 1. Project Overview
-**WKU (WaniKani Ushi)** is a Greasyfork userscript designed to provide personalized Japanese grammar exercises. It uses the student's WaniKani progress (Kanji and Vocabulary) to feed the Gemini 1.5 Flash API, ensuring that all generated exercises use only familiar vocabulary.
+**WKU (WaniKani Ushi)** is a Greasyfork userscript designed to provide personalized Japanese grammar exercises and reading comprehension short stories. It uses the student's WaniKani progress (Kanji and Vocabulary) to feed the Gemini 1.5 Flash API, ensuring that all generated content uses only familiar vocabulary.
 
 ## 2. Technical Stack
 - **Framework:** React 19 (Bundled for CSP compliance).

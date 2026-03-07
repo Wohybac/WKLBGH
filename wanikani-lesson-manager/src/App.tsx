@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GM_getValue, GM_setValue, GM_xmlhttpRequest, unsafeWindow } from '$';
 import { filterItems, parseGeminiResponse, Lesson } from './logic';
-import { buildGrammarLessonPrompt } from './prompts';
+import { buildGrammarLessonPrompt, buildShortStoryPrompt } from './prompts';
 import './App.css';
 
 declare global {
@@ -232,11 +232,11 @@ function App() {
     } catch (e: any) { setStatus(`Error: ${e.message}`); }
   };
 
-  const generateExercise = async () => {
+  const generateExercise = async (type: 'grammar' | 'story' = 'grammar') => {
     if (!geminiKey) { setShowSettings(true); return; }
     
     setAppState('generating');
-    setStatus('Generating lesson...');
+    setStatus(type === 'grammar' ? 'Generating grammar lesson...' : 'Generating short story...');
 
     let modelToUse = activeModel;
     if (!modelToUse) {
@@ -253,7 +253,10 @@ function App() {
     
     const sampled = learnedItems.sort(() => 0.5 - Math.random()).slice(0, 50);
     const itemStrings = sampled.length > 0 ? sampled.map(i => i.data.characters || i.data.slug).join(', ') : "None";
-    const prompt = buildGrammarLessonPrompt(itemStrings, jlptSettings);
+    
+    const prompt = type === 'grammar' 
+      ? buildGrammarLessonPrompt(itemStrings, jlptSettings)
+      : buildShortStoryPrompt(itemStrings, jlptSettings);
 
     GM_xmlhttpRequest({
       method: 'POST',
@@ -365,10 +368,20 @@ function App() {
 
     return (
       <div className="wklbgh-lesson-container">
+        {lessonData.story_text && (
+          <div className="wklbgh-story-container" style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f9f9f9', borderRadius: '8px', border: '1px solid #eee' }}>
+            <h3 style={{ marginTop: 0, marginBottom: '10px', fontSize: '16px', color: '#555' }}>Reading Comprehension</h3>
+            <p style={{ lineHeight: '1.6', fontSize: '15px', margin: 0, whiteSpace: 'pre-wrap' }}>{lessonData.story_text}</p>
+            {isAnswered && currentQuestionIndex === lessonData.questions.length - 1 && lessonData.story_translation && (
+               <p style={{ lineHeight: '1.6', fontSize: '14px', margin: '15px 0 0 0', paddingTop: '10px', borderTop: '1px dashed #ddd', color: '#666' }}>{lessonData.story_translation}</p>
+            )}
+          </div>
+        )}
+
         <h2 className="wklbgh-lesson-progress">Question {currentQuestionIndex + 1} of {lessonData.questions.length}</h2>
-        <div className="wklbgh-lesson-sentence">{currentQuestion.sentence_with_blank}</div>
+        <div className="wklbgh-lesson-sentence">{currentQuestion.sentence_with_blank || currentQuestion.question_text}</div>
         
-        {isAnswered && (
+        {isAnswered && currentQuestion.english_translation && (
           <div className="wklbgh-lesson-translation">
             {currentQuestion.english_translation}
           </div>
@@ -610,10 +623,16 @@ function App() {
                 </button>
               )}
               {appState === 'idle' && learnedCount.kanji > 0 && (
-                <button className="wklbgh-button" onClick={generateExercise}>
-                  <span>Generate Lesson</span>
-                  <span className="wklbgh-button-icon">›</span>
-                </button>
+                <>
+                  <button className="wklbgh-button" onClick={() => generateExercise('grammar')}>
+                    <span>Generate Grammar Lesson</span>
+                    <span className="wklbgh-button-icon">›</span>
+                  </button>
+                  <button className="wklbgh-button" onClick={() => generateExercise('story')}>
+                    <span>Generate Short Story</span>
+                    <span className="wklbgh-button-icon">›</span>
+                  </button>
+                </>
               )}
               {appState === 'generating' && (
                 <button className="wklbgh-button wklbgh-button--disabled" disabled>

@@ -32,4 +32,4 @@
 ### Medium Priority
 
 ### Low Priority
-- [ ] **WK-025: Short Story Generation** - Add an option to generate a short story using familiar vocabulary instead of a standard grammar lesson.
+- [x] **WK-025: Short Story Generation** - Add an option to generate a short story using familiar vocabulary instead of a standard grammar lesson.
